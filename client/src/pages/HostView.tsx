@@ -186,12 +186,7 @@ const HostView: React.FC = () => {
                   letterSpacing: '0.05em',
                   textShadow: '0 2px 8px rgba(0,0,0,1)'
                 }}>
-                  {house.houseId === 1 && 'หนูน้อยหมวกแดง'}
-                  {house.houseId === 2 && 'หมาป่า'}
-                  {house.houseId === 3 && 'คุณยาย'}
-                  {house.houseId === 4 && 'คนตัดไม้'}
-                  {house.houseId === 5 && 'นายพราน'}
-                  {house.houseId === 6 && 'แม่มด'}
+                  บ้านที่ {house.houseId}
                 </h3>
                 
                 {house.isOnline ? (
