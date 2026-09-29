@@ -126,16 +126,19 @@ const HostView: React.FC = () => {
           position: 'relative',
           zIndex: 1
         }}>
-          {Object.values(session.houses).map((house) => (
+          {Object.values(session.houses).map((house) => {
+            const activePlayersCount = house.players.filter(p => p.isOnline).length;
+            const isHouseActive = activePlayersCount > 0;
+            return (
             <div key={house.houseId} style={{
               position: 'relative',
               borderRadius: '24px',
               padding: '24px',
               textAlign: 'center',
-              border: `2px solid ${house.isOnline ? '#D9AE6E' : 'rgba(217, 174, 110, 0.2)'}`,
-              boxShadow: house.isOnline ? '0 15px 35px rgba(0,0,0,0.6), inset 0 0 20px rgba(217, 174, 110, 0.3)' : '0 10px 25px rgba(0,0,0,0.5)',
+              border: `2px solid ${isHouseActive ? '#D9AE6E' : 'rgba(217, 174, 110, 0.2)'}`,
+              boxShadow: isHouseActive ? '0 15px 35px rgba(0,0,0,0.6), inset 0 0 20px rgba(217, 174, 110, 0.3)' : '0 10px 25px rgba(0,0,0,0.5)',
               transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              transform: house.isOnline ? 'translateY(-8px)' : 'none',
+              transform: isHouseActive ? 'translateY(-8px)' : 'none',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
@@ -153,7 +156,7 @@ const HostView: React.FC = () => {
                 backgroundImage: `url('/houses/${house.houseId}.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                filter: house.isOnline ? 'brightness(0.7)' : 'brightness(0.3) grayscale(0.8)',
+                filter: isHouseActive ? 'brightness(0.7)' : 'brightness(0.3) grayscale(0.8)',
                 zIndex: 0,
                 transition: 'all 0.4s ease'
               }} />
@@ -165,14 +168,14 @@ const HostView: React.FC = () => {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                background: house.isOnline 
+                background: isHouseActive 
                   ? 'linear-gradient(to top, rgba(15, 25, 20, 0.95) 0%, rgba(30, 48, 38, 0.3) 50%, rgba(30, 48, 38, 0.1) 100%)'
                   : 'rgba(10, 18, 11, 0.75)',
                 zIndex: 1,
               }} />
 
               {/* Shine effect for online houses */}
-              {house.isOnline && (
+              {isHouseActive && (
                 <div style={{ position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent)', transform: 'skewX(-20deg)', animation: 'shine 3s infinite', zIndex: 2 }} />
               )}
               
@@ -181,7 +184,7 @@ const HostView: React.FC = () => {
                   fontFamily: "'Cinzel', serif",
                   fontSize: '22px',
                   fontWeight: 'bold',
-                  color: house.isOnline ? '#F6E8CD' : 'rgba(246, 232, 205, 0.5)',
+                  color: isHouseActive ? '#F6E8CD' : 'rgba(246, 232, 205, 0.5)',
                   margin: '0 0 12px 0',
                   letterSpacing: '0.05em',
                   textShadow: '0 2px 8px rgba(0,0,0,1)'
@@ -189,7 +192,7 @@ const HostView: React.FC = () => {
                   บ้านที่ {house.houseId}
                 </h3>
                 
-                {house.isOnline ? (
+                {isHouseActive ? (
                   <div style={{
                     display: 'inline-block',
                     background: 'rgba(74, 222, 128, 0.15)',
@@ -202,7 +205,7 @@ const HostView: React.FC = () => {
                     boxShadow: '0 0 15px rgba(74, 222, 128, 0.15)',
                     backdropFilter: 'blur(4px)'
                   }}>
-                    เข้าร่วมแล้ว ({house.players.filter(p => p.isOnline).length} คน)
+                    เข้าร่วมแล้ว ({activePlayersCount} คน)
                   </div>
                 ) : (
                   <div style={{
@@ -218,7 +221,7 @@ const HostView: React.FC = () => {
                 )}
               </div>
             </div>
-          ))}
+          )})}
         </div>
         
         <div style={{ width: '100%', maxWidth: '360px', marginBottom: '60px' }}>
