@@ -1,0 +1,11 @@
+node_modules/
+.DS_Store
+client/node_modules/
+server/node_modules/
+video/
+charactor/
+.env
+dist/
+client/dist/
+server/dist/
+client/public/0929.mov
