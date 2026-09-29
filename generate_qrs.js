@@ -2,9 +2,7 @@ const QRCode = require('qrcode');
 const fs = require('fs');
 const path = require('path');
 
-const ipAddress = '172.20.10.4';
-const port = '5173';
-const baseUrl = `http://${ipAddress}:${port}/join/LITTLEHOOD?house=`;
+const baseUrl = `https://littlehood-boardgame-sigma.vercel.app/join/LITTLEHOOD?house=`;
 
 const characters = [
   { id: 1, name: 'หนูน้อยหมวกแดง' },
