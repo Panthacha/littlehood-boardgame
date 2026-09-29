@@ -150,10 +150,10 @@ const HostView: React.FC = () => {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundImage: "url('/village-bg.jpg')",
+                backgroundImage: `url('/houses/${house.houseId}.png')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                filter: house.isOnline ? 'blur(2px) brightness(0.6)' : 'blur(4px) brightness(0.3) grayscale(0.5)',
+                filter: house.isOnline ? 'brightness(0.7)' : 'brightness(0.3) grayscale(0.8)',
                 zIndex: 0,
                 transition: 'all 0.4s ease'
               }} />
@@ -166,7 +166,7 @@ const HostView: React.FC = () => {
                 right: 0,
                 bottom: 0,
                 background: house.isOnline 
-                  ? 'linear-gradient(135deg, rgba(30, 48, 38, 0.6), rgba(15, 25, 20, 0.9))'
+                  ? 'linear-gradient(to top, rgba(15, 25, 20, 0.95) 0%, rgba(30, 48, 38, 0.3) 50%, rgba(30, 48, 38, 0.1) 100%)'
                   : 'rgba(10, 18, 11, 0.75)',
                 zIndex: 1,
               }} />
@@ -176,33 +176,22 @@ const HostView: React.FC = () => {
                 <div style={{ position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent)', transform: 'skewX(-20deg)', animation: 'shine 3s infinite', zIndex: 2 }} />
               )}
               
-              <div style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-                <div style={{
-                  width: '64px',
-                  height: '64px',
-                  margin: '0 auto 16px auto',
-                  borderRadius: '50%',
-                  background: house.isOnline ? 'rgba(217, 174, 110, 0.2)' : 'rgba(0,0,0,0.3)',
-                  border: `2px dashed ${house.isOnline ? '#D9AE6E' : 'rgba(255,255,255,0.2)'}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '28px',
-                  boxShadow: house.isOnline ? '0 0 15px rgba(217, 174, 110, 0.4)' : 'none'
-                }}>
-                  {house.isOnline ? '✨' : '🏠'}
-                </div>
-
+              <div style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', height: '100%' }}>
                 <h3 style={{
                   fontFamily: "'Cinzel', serif",
-                  fontSize: '24px',
+                  fontSize: '22px',
                   fontWeight: 'bold',
                   color: house.isOnline ? '#F6E8CD' : 'rgba(246, 232, 205, 0.5)',
                   margin: '0 0 12px 0',
                   letterSpacing: '0.05em',
-                  textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+                  textShadow: '0 2px 8px rgba(0,0,0,1)'
                 }}>
-                  บ้านที่ {house.houseId}
+                  {house.houseId === 1 && 'หนูน้อยหมวกแดง'}
+                  {house.houseId === 2 && 'หมาป่า'}
+                  {house.houseId === 3 && 'คุณยาย'}
+                  {house.houseId === 4 && 'คนตัดไม้'}
+                  {house.houseId === 5 && 'นายพราน'}
+                  {house.houseId === 6 && 'แม่มด'}
                 </h3>
                 
                 {house.isOnline ? (
