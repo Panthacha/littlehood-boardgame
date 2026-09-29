@@ -27,8 +27,8 @@ async function generateQRCodes() {
         width: 500,
         margin: 2,
         color: {
-          dark: '#000000',
-          light: '#ffffff'
+          dark: '#3E1C16', // Dark mahogany/brown for contrast
+          light: '#F6E8CD' // Parchment/gold background
         }
       });
       console.log(`Generated QR code for ${char.name} at ${filePath}`);

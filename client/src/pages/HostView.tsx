@@ -627,7 +627,7 @@ const HostView: React.FC = () => {
           justifyContent: 'center'
         }}>
           <video 
-            src="/0929.mov" 
+            src="/0929-3.mov" 
             autoPlay 
             onEnded={() => {
               setPlayingIntro(false);
