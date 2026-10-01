@@ -191,8 +191,25 @@ const PlayerView: React.FC = () => {
   return (
     <div className="min-h-screen forest-bg p-4 flex flex-col items-center">
       <div className="w-full flex justify-between items-center mb-6 px-4">
-        <span className="text-gold font-bold text-lg">บ้านที่ {houseId}</span>
-        <span className="text-gold">ทีมของคุณ</span>
+        <div className="flex flex-col">
+          <span className="text-gold font-bold text-xl">บ้านที่ {houseId}</span>
+          <span className="text-white opacity-70 text-sm">ผู้เข้าแข่งขัน</span>
+        </div>
+        <div style={{ 
+          background: 'rgba(217, 174, 110, 0.15)', 
+          border: '1px solid rgba(217, 174, 110, 0.4)', 
+          padding: '8px 16px', 
+          borderRadius: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+        }}>
+          <span className="text-gold text-xs font-bold tracking-wider mb-1">SCORE</span>
+          <span className="text-white font-bold text-2xl" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+            {house.score}
+          </span>
+        </div>
       </div>
       
       {renderContent()}
