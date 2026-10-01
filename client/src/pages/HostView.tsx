@@ -387,49 +387,52 @@ const HostView: React.FC = () => {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          marginBottom: '32px',
-          padding: '16px 32px',
-          background: 'rgba(10, 18, 11, 0.7)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: '20px',
-          border: '1px solid rgba(217, 174, 110, 0.3)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)'
+          marginBottom: '40px',
+          padding: '24px 48px',
+          background: 'linear-gradient(135deg, rgba(30, 48, 38, 0.8) 0%, rgba(10, 18, 11, 0.95) 100%)',
+          backdropFilter: 'blur(16px)',
+          borderRadius: '24px',
+          border: '2px solid rgba(217, 174, 110, 0.4)',
+          borderBottom: '4px solid #D9AE6E',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(217, 174, 110, 0.1)'
         }}>
-          <div style={{ fontSize: '20px', color: '#F6E8CD', fontFamily: "'Cinzel', serif", fontWeight: 'bold' }}>
-            ภารกิจที่ {session.currentQuestionIndex + 1} <span style={{opacity: 0.5}}>/ 5</span>
+          <div style={{ fontSize: '28px', color: '#D9AE6E', fontFamily: "'Cinzel', serif", fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+            ภารกิจที่ {session.currentQuestionIndex + 1} <span style={{opacity: 0.6, fontSize: '22px'}}>/ 5</span>
           </div>
           <div style={{ 
-            fontSize: '36px', 
+            fontSize: '56px', 
             fontWeight: 'bold', 
-            color: session.state === 'QUESTION_OPEN' && timeRemaining <= 10 ? '#ff4757' : '#D9AE6E',
-            textShadow: '0 0 15px rgba(217, 174, 110, 0.4)'
+            fontFamily: "'Cinzel', serif",
+            color: session.state === 'QUESTION_OPEN' && timeRemaining <= 10 ? '#ff4757' : '#F6E8CD',
+            textShadow: session.state === 'QUESTION_OPEN' && timeRemaining <= 10 ? '0 0 20px rgba(255, 71, 87, 0.6)' : '0 0 20px rgba(246, 232, 205, 0.4)',
+            lineHeight: 1
           }}>
             {session.state === 'QUESTION_OPEN' ? timeRemaining : 'หมดเวลา'}
           </div>
-          <div style={{ fontSize: '18px', color: 'rgba(255,255,255,0.8)' }}>
-            ตอบแล้ว <strong style={{ color: '#4ade80' }}>{submittedCount}</strong> / {totalOnline} บ้าน
+          <div style={{ fontSize: '24px', color: 'rgba(255,255,255,0.9)', fontWeight: 'bold' }}>
+            ตอบแล้ว <strong style={{ color: '#4ade80', fontSize: '32px', margin: '0 8px' }}>{submittedCount}</strong> / {totalOnline} บ้าน
           </div>
         </div>
 
         {/* Question Box */}
         <div style={{
-          background: 'linear-gradient(145deg, rgba(30, 48, 38, 0.95), rgba(15, 25, 20, 0.98))',
-          border: '2px solid #D9AE6E',
-          borderRadius: '24px',
-          padding: '40px',
-          marginBottom: '32px',
-          boxShadow: '0 15px 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(217, 174, 110, 0.1)',
+          background: 'linear-gradient(145deg, rgba(30, 48, 38, 0.85), rgba(15, 25, 20, 0.95))',
+          border: '2px solid rgba(217, 174, 110, 0.6)',
+          borderRadius: '32px',
+          padding: '48px',
+          marginBottom: '40px',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.7), inset 0 0 30px rgba(217, 174, 110, 0.15)',
           position: 'relative',
-          overflow: 'hidden'
+          backdropFilter: 'blur(20px)'
         }}>
           <h2 style={{ 
-            fontSize: '32px', 
+            fontSize: '42px', 
             fontWeight: 'bold', 
             textAlign: 'center', 
-            marginBottom: '40px',
-            color: '#ffffff',
-            textShadow: '0 2px 4px rgba(0,0,0,0.8)',
-            lineHeight: '1.4'
+            marginBottom: '48px',
+            color: '#F6E8CD',
+            textShadow: '0 4px 12px rgba(0,0,0,0.8), 0 0 20px rgba(217, 174, 110, 0.3)',
+            lineHeight: '1.5'
           }}>
             {question.text}
           </h2>
@@ -458,30 +461,31 @@ const HostView: React.FC = () => {
                 <div 
                   key={opt.key} 
                   style={{
-                    padding: '20px 24px',
-                    borderRadius: '16px',
+                    padding: '28px 36px',
+                    borderRadius: '20px',
                     color: 'white',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '20px',
-                    fontSize: '22px',
-                    background: isCorrect ? 'rgba(74, 222, 128, 0.25)' : 'rgba(0, 0, 0, 0.4)',
-                    border: `2px solid ${isCorrect ? '#4ade80' : 'rgba(255,255,255,0.1)'}`,
-                    opacity: isWrong ? 0.6 : 1,
+                    gap: '24px',
+                    fontSize: '28px',
+                    background: isCorrect ? 'linear-gradient(145deg, rgba(74, 222, 128, 0.4), rgba(74, 222, 128, 0.2))' : 'linear-gradient(145deg, rgba(30, 48, 38, 0.6), rgba(10, 18, 11, 0.8))',
+                    border: `2px solid ${isCorrect ? '#4ade80' : 'rgba(217, 174, 110, 0.3)'}`,
+                    opacity: isWrong ? 0.4 : 1,
                     transform: isCorrect ? 'scale(1.02)' : 'scale(1)',
-                    boxShadow: isCorrect ? '0 0 25px rgba(74, 222, 128, 0.4), inset 0 0 15px rgba(74, 222, 128, 0.2)' : 'none',
-                    transition: 'all 0.4s ease'
+                    boxShadow: isCorrect ? '0 0 30px rgba(74, 222, 128, 0.5), inset 0 0 20px rgba(74, 222, 128, 0.3)' : '0 8px 20px rgba(0,0,0,0.4)',
+                    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                   }}
                 >
                   <span style={{ 
                     fontWeight: 'bold', 
                     color: optionColors[opt.key] || '#D9AE6E', 
-                    fontSize: '32px',
-                    textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                    fontSize: '48px',
+                    textShadow: '0 4px 10px rgba(0,0,0,0.6)',
+                    lineHeight: 1
                   }}>
                     {opt.key}
                   </span>
-                  <div style={{ flex: 1, fontWeight: 'bold' }}>{opt.text}</div>
+                  <div style={{ flex: 1, fontWeight: 'bold', color: '#F6E8CD', letterSpacing: '0.02em' }}>{opt.text}</div>
                 </div>
               );
             })}
