@@ -239,24 +239,25 @@ const PlayerView: React.FC = () => {
             
             {/* Wooden Sign Header */}
             <div style={{
-              backgroundColor: '#8B5A2B',
-              backgroundImage: 'linear-gradient(to bottom, #A06B35, #70441D)',
-              border: '4px solid #4A2B11',
-              borderRadius: '20px',
-              padding: '24px 48px',
-              boxShadow: '0 15px 30px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,0,0,0.4)',
+              backgroundColor: '#613F22',
+              backgroundImage: 'linear-gradient(to bottom, #7A5333, #4E311A)',
+              border: '6px solid #362211',
+              borderRadius: '24px',
+              padding: '24px 60px',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.2)',
               textAlign: 'center',
-              marginBottom: '40px',
+              marginBottom: '60px',
               position: 'relative',
               zIndex: 10
             }}>
-              <div style={{ position: 'absolute', top: '-10px', left: '20px', width: '12px', height: '30px', background: '#D9AE6E', borderRadius: '4px', border: '2px solid #333', zIndex: -1 }}></div>
-              <div style={{ position: 'absolute', top: '-10px', right: '20px', width: '12px', height: '30px', background: '#D9AE6E', borderRadius: '4px', border: '2px solid #333', zIndex: -1 }}></div>
+              {/* Wooden Sign Straps */}
+              <div style={{ position: 'absolute', top: '-15px', left: '30px', width: '16px', height: '35px', background: 'linear-gradient(to right, #8B6B4C, #C3A37C, #8B6B4C)', borderRadius: '4px', border: '3px solid #2B1B0D', zIndex: -1, boxShadow: '0 4px 8px rgba(0,0,0,0.5)' }}></div>
+              <div style={{ position: 'absolute', top: '-15px', right: '30px', width: '16px', height: '35px', background: 'linear-gradient(to right, #8B6B4C, #C3A37C, #8B6B4C)', borderRadius: '4px', border: '3px solid #2B1B0D', zIndex: -1, boxShadow: '0 4px 8px rgba(0,0,0,0.5)' }}></div>
               
-              <h1 style={{ fontSize: '42px', color: '#FFF3E0', textShadow: '2px 3px 5px rgba(0,0,0,0.8)', margin: 0, fontWeight: 'bold' }}>
+              <h1 style={{ fontSize: '48px', color: '#FDF1E1', textShadow: '2px 4px 6px rgba(0,0,0,0.9)', margin: 0, fontWeight: '900', letterSpacing: '1px' }}>
                 {roleInfo.icon} คุณคือ{roleInfo.name}
               </h1>
-              <p style={{ fontSize: '22px', color: '#FFE0B2', textShadow: '1px 2px 3px rgba(0,0,0,0.8)', marginTop: '8px' }}>
+              <p style={{ fontSize: '24px', color: '#F3D2A4', textShadow: '1px 2px 4px rgba(0,0,0,0.9)', marginTop: '12px', fontWeight: 'bold' }}>
                 {house.role === 'WITCH' && !witchAction 
                   ? 'คุณเลือกที่จะทำอะไรในคืนนี้' 
                   : (house.role === 'WOODCUTTER' 
@@ -315,16 +316,27 @@ const PlayerView: React.FC = () => {
                 )}
 
                 {/* Village Layout */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '30px', maxWidth: '850px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '20px', maxWidth: '900px', paddingBottom: '100px', marginTop: '20px' }}>
                   {[1, 2, 3, 4, 5, 6].map(h => {
                     const isOwnHouse = h === houseId;
                     const isSuspect = house.role === 'WOODCUTTER' && house.woodcutterResult?.includes(h);
                     const isDimmed = isOwnHouse || (house.role === 'WOODCUTTER' && !isSuspect);
                     
+                    const targetHouseData = session.houses[h];
+                    const isProtected = targetHouseData?.isProtected;
+                    const isDead = targetHouseData?.isDead;
+                    const injuries = targetHouseData?.injuries || 0;
+
+                    // Calculate staggered position
+                    let translateY = '0px';
+                    if (h === 2) translateY = '30px';
+                    if (h === 4 || h === 6) translateY = '60px';
+                    if (h === 5) translateY = '90px';
+                    
                     return (
                       <button 
                         key={h}
-                        disabled={actionUsed || house.usedNightSkill || isOwnHouse}
+                        disabled={actionUsed || house.usedNightSkill || isOwnHouse || isDead}
                         onClick={() => {
                           if (house.role === 'WOODCUTTER') {
                             socket?.emit('useNightSkill', { houseId }, () => setActionUsed(true));
@@ -354,48 +366,64 @@ const PlayerView: React.FC = () => {
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          cursor: (actionUsed || house.usedNightSkill || isOwnHouse) ? 'default' : 'pointer',
-                          transition: 'all 0.2s',
-                          opacity: (actionUsed || house.usedNightSkill) && selectedTarget !== h ? 0.3 : (isDimmed ? 0.4 : 1),
+                          cursor: (actionUsed || house.usedNightSkill || isOwnHouse || isDead) ? 'default' : 'pointer',
+                          transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                          opacity: isDead ? 0.3 : ((actionUsed || house.usedNightSkill) && selectedTarget !== h ? 0.3 : (isDimmed ? 0.4 : 1)),
                           position: 'relative',
-                          transform: selectedTarget === h ? 'scale(1.05)' : 'scale(1)',
-                          width: '240px'
+                          transform: `translateY(${translateY}) ${selectedTarget === h ? 'scale(1.15)' : 'scale(1)'}`,
+                          width: '260px',
+                          margin: '10px'
                         }}
                       >
+                        {/* Hover/Active Glow Effect underneath */}
+                        <div style={{
+                          position: 'absolute',
+                          top: '10%', left: '10%', right: '10%', bottom: '20%',
+                          background: selectedTarget === h ? (witchAction === 'protect' || house.role === 'GRANDMA' ? 'rgba(74, 222, 128, 0.5)' : 'rgba(255, 71, 87, 0.5)') : 'transparent',
+                          borderRadius: '50%',
+                          filter: 'blur(30px)',
+                          zIndex: -1,
+                          transition: 'all 0.3s'
+                        }} />
+
                         <img 
                           src={`/houses/${h}.png`} 
                           alt={`บ้าน ${h}`} 
                           style={{ 
                             width: '100%', 
-                            height: '180px', 
+                            height: '200px', 
                             objectFit: 'contain', 
-                            filter: selectedTarget === h 
-                              ? (witchAction === 'protect' || house.role === 'GRANDMA' ? 'drop-shadow(0 0 20px #4ade80)' : 'drop-shadow(0 0 20px #ff4757)') 
-                              : 'drop-shadow(0 10px 15px rgba(0,0,0,0.5))',
-                            transition: 'filter 0.3s'
+                            filter: isDead ? 'grayscale(100%) brightness(50%)' : 'drop-shadow(0 20px 25px rgba(0,0,0,0.8))',
                           }} 
                         />
                         
+                        {/* Status Badges on the House itself */}
+                        <div style={{ position: 'absolute', top: '10px', display: 'flex', gap: '8px', zIndex: 15, fontSize: '32px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.8))' }}>
+                          {isProtected && '🛡️'}
+                          {isDead ? '☠️' : (injuries === 1 ? '❤️🩹' : '')}
+                        </div>
+
                         {/* House Label / Wooden Sign */}
                         <div style={{ 
-                          background: '#8B5A2B', 
+                          background: 'linear-gradient(to bottom, #70441D, #4A2B11)', 
                           color: '#FFE0B2', 
-                          border: '3px solid #4A2B11', 
-                          borderRadius: '8px', 
-                          padding: '6px 20px', 
-                          marginTop: '-15px', 
+                          border: '4px solid #2D1A0A', 
+                          borderRadius: '12px', 
+                          padding: '8px 24px', 
+                          marginTop: '-25px', 
                           position: 'relative', 
                           zIndex: 2,
                           fontWeight: 'bold',
-                          fontSize: '18px',
-                          boxShadow: '0 4px 8px rgba(0,0,0,0.6)'
+                          fontSize: '20px',
+                          boxShadow: '0 8px 16px rgba(0,0,0,0.8), inset 0 2px 5px rgba(255,255,255,0.2)',
+                          textShadow: '1px 2px 3px rgba(0,0,0,0.8)'
                         }}>
                           บ้าน {h} {isOwnHouse && '(ของคุณ)'} {isSuspect && '🔍'}
                         </div>
                         
-                        {/* Feedback Badges */}
+                        {/* Feedback Badges (Active selection) */}
                         {selectedTarget === h && (
-                          <div style={{ position: 'absolute', top: '-10px', right: '10px', fontSize: '48px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.8))', zIndex: 10, animation: 'bounce 0.5s ease' }}>
+                          <div style={{ position: 'absolute', top: '-20px', right: '0', fontSize: '64px', filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.9))', zIndex: 20, animation: 'bounce 0.5s ease' }}>
                             {(house.role === 'GRANDMA' || witchAction === 'protect') && '🛡️'}
                             {(house.role === 'HUNTER' || witchAction === 'attack') && '🏹'}
                           </div>

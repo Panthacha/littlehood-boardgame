@@ -838,16 +838,25 @@ const HostView: React.FC = () => {
                 controls: 0,
                 rel: 0,
                 modestbranding: 1,
-                cc_load_policy: 0,
+                cc_load_policy: 1, // Force captions on
+                cc_lang_pref: 'zz', // To a non-existent language
+                hl: 'zz', // UI language
                 iv_load_policy: 3
               } 
+            }}
+            onReady={(e) => {
+              try {
+                // Secondary fallback: Try to forcefully disable captions via API
+                e.target.unloadModule('captions');
+                e.target.unloadModule('cc');
+              } catch (err) {}
             }}
             onEnd={() => {
               setPlayingIntro(false);
               setActiveTab('QUIZ');
               socket?.emit('hostStartGame');
             }}
-            style={{ width: '100vw', height: '100vh' }}
+            style={{ width: '100vw', height: '100vh', pointerEvents: 'none' }}
           />
           <button 
             onClick={() => {
