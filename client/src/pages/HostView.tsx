@@ -600,7 +600,35 @@ const HostView: React.FC = () => {
     <div className="min-h-screen forest-bg flex flex-col p-4">
       <header className="flex justify-between items-center mb-6 relative">
         <h1 className="host-title">Little Hood: Into the Woods</h1>
-        <AdminSettingsButton onClick={() => setShowAdminModal(true)} />
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <button 
+            onClick={() => {
+              if (window.confirm('คุณต้องการรีเซ็ตเกมและลบคะแนนทั้งหมด กลับไปเริ่มใหม่(LOBBY)หรือไม่?')) {
+                socket?.emit('hostNewRound');
+              }
+            }}
+            style={{
+              background: 'rgba(255, 71, 87, 0.2)',
+              border: '1px solid #ff4757',
+              color: '#ff4757',
+              padding: '8px 16px',
+              borderRadius: '12px',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(4px)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 71, 87, 0.4)'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 71, 87, 0.2)'}
+          >
+            <span style={{ fontSize: '20px' }}>🔄</span> รีเซ็ตเกมใหม่
+          </button>
+          <AdminSettingsButton onClick={() => setShowAdminModal(true)} />
+        </div>
       </header>
       
       {renderTabs()}
