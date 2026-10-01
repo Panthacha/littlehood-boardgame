@@ -312,8 +312,7 @@ const HostView: React.FC = () => {
       );
     }
 
-    if (session.state === 'FINISHED') {
-       // Sort houses by score
+    if (session.state === 'MID_SCOREBOARD') {
        const sorted = Object.values(session.houses).sort((a, b) => b.score - a.score);
        return (
           <div style={{
@@ -327,7 +326,7 @@ const HostView: React.FC = () => {
             backdropFilter: 'blur(15px)'
           }}>
             <h2 style={{ fontSize: '42px', fontFamily: "'Cinzel', serif", fontWeight: 'bold', textAlign: 'center', color: '#D9AE6E', marginBottom: '40px', textShadow: '0 4px 15px rgba(0,0,0,0.8)' }}>
-              🏆 ภารกิจแรกของหมู่บ้านสำเร็จแล้ว!
+              🏆 สรุปคะแนนครึ่งแรก (Pre-test)
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {sorted.map((h, i) => (
@@ -347,7 +346,111 @@ const HostView: React.FC = () => {
                     อันดับ {i + 1} - บ้านที่ {h.houseId} {i === 0 && '👑'}
                   </div>
                   <div style={{ fontSize: '20px', color: i === 0 ? '#fff' : 'rgba(255,255,255,0.8)' }}>
-                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/5)
+                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/10)
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center' }}>
+              <button 
+                onClick={() => socket?.emit('hostStartPostVideo')}
+                style={{
+                  background: 'linear-gradient(135deg, #D9AE6E, #B88645)',
+                  color: '#1a1a1a',
+                  border: 'none',
+                  padding: '16px 40px',
+                  borderRadius: '16px',
+                  fontSize: '22px',
+                  fontWeight: 'bold',
+                  fontFamily: "'Noto Sans Thai', sans-serif",
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 25px rgba(217, 174, 110, 0.6)'
+                }}
+              >
+                ดูคลิปบทเรียน (เข้าสู่ Post-test) ➡️
+              </button>
+            </div>
+          </div>
+       );
+    }
+
+    if (session.state === 'POST_VIDEO') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+          <div style={{ 
+            width: '100%', 
+            maxWidth: '1200px', 
+            borderRadius: '24px', 
+            overflow: 'hidden', 
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+            border: '4px solid #D9AE6E',
+            position: 'relative'
+          }}>
+            <video 
+              src="/0929.mp4" 
+              autoPlay 
+              controls
+              style={{ width: '100%', display: 'block' }}
+            />
+          </div>
+          <button 
+            onClick={() => socket?.emit('hostStartPostTest')}
+            style={{
+              marginTop: '40px',
+              background: 'linear-gradient(135deg, #1E392A, #2D5A27)',
+              color: '#F6E8CD',
+              border: '2px solid #4ade80',
+              padding: '16px 48px',
+              borderRadius: '16px',
+              fontSize: '24px',
+              fontWeight: 'bold',
+              fontFamily: "'Noto Sans Thai', sans-serif",
+              cursor: 'pointer',
+              boxShadow: '0 8px 25px rgba(45, 90, 39, 0.6), inset 0 0 15px rgba(74, 222, 128, 0.3)'
+            }}
+          >
+            เริ่มแบบทดสอบหลังเรียน (Post-test) 🎯
+          </button>
+        </div>
+      );
+    }
+
+    if (session.state === 'FINISHED') {
+       // Sort houses by score
+       const sorted = Object.values(session.houses).sort((a, b) => b.score - a.score);
+       return (
+          <div style={{
+            background: 'linear-gradient(145deg, rgba(30, 48, 38, 0.95), rgba(10, 18, 11, 0.98))',
+            border: '2px solid #D9AE6E',
+            borderRadius: '32px',
+            padding: '48px',
+            maxWidth: '800px',
+            margin: '0 auto',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(217, 174, 110, 0.2)',
+            backdropFilter: 'blur(15px)'
+          }}>
+            <h2 style={{ fontSize: '42px', fontFamily: "'Cinzel', serif", fontWeight: 'bold', textAlign: 'center', color: '#D9AE6E', marginBottom: '40px', textShadow: '0 4px 15px rgba(0,0,0,0.8)' }}>
+              🏆 สรุปคะแนนรวมทั้งหมด (Post-test)
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {sorted.map((h, i) => (
+                <div key={h.houseId} style={{
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center', 
+                  padding: '20px 32px', 
+                  background: i === 0 ? 'linear-gradient(90deg, rgba(217, 174, 110, 0.3), rgba(217, 174, 110, 0.1))' : 'rgba(0,0,0,0.4)',
+                  borderRadius: '16px', 
+                  border: `1px solid ${i === 0 ? '#D9AE6E' : 'rgba(255,255,255,0.1)'}`,
+                  boxShadow: i === 0 ? '0 0 20px rgba(217, 174, 110, 0.2)' : 'none',
+                  transform: i === 0 ? 'scale(1.02)' : 'none',
+                  transition: 'all 0.3s'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: i === 0 ? '#D9AE6E' : '#F6E8CD' }}>
+                    อันดับ {i + 1} - บ้านที่ {h.houseId} {i === 0 && '👑'}
+                  </div>
+                  <div style={{ fontSize: '20px', color: i === 0 ? '#fff' : 'rgba(255,255,255,0.8)' }}>
+                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/10)
                   </div>
                 </div>
               ))}

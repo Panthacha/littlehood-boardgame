@@ -1,4 +1,4 @@
-export type GameState = 'LOBBY' | 'COUNTDOWN' | 'QUESTION_OPEN' | 'QUESTION_CLOSED' | 'REVEAL' | 'FINISHED';
+export type GameState = 'LOBBY' | 'COUNTDOWN' | 'QUESTION_OPEN' | 'QUESTION_CLOSED' | 'REVEAL' | 'MID_SCOREBOARD' | 'POST_VIDEO' | 'FINISHED';
 
 export interface Question {
   id: number;

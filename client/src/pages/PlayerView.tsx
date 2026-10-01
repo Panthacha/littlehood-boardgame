@@ -171,13 +171,32 @@ const PlayerView: React.FC = () => {
           </div>
         );
 
+      case 'MID_SCOREBOARD':
+        return (
+          <div style={cardStyle}>
+            <h2 style={{ fontSize: '28px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '16px' }}>จบช่วง Pre-test</h2>
+            <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '24px' }}>ดูสรุปคะแนนครึ่งแรกบนจอใหญ่เลยครับ!</p>
+            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#fff', marginBottom: '24px', textShadow: '0 0 15px rgba(255,255,255,0.3)' }}>
+              คะแนนของคุณ: {house.score}
+            </div>
+          </div>
+        );
+
+      case 'POST_VIDEO':
+        return (
+          <div style={cardStyle}>
+            <h2 style={{ fontSize: '28px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '16px' }}>ช่วงคลิปบทเรียน 🎬</h2>
+            <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '24px' }}>กรุณาตั้งใจดูและฟังคลิปบทเรียนบนจอใหญ่นะครับ เดี๋ยวเราจะมีแบบทดสอบ Post-test ท้ายบทเรียน!</p>
+          </div>
+        );
+
       case 'FINISHED':
         return (
           <div style={cardStyle}>
             <h2 style={{ fontSize: '32px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '24px' }}>ภารกิจเสร็จสิ้น!</h2>
             <div style={{ padding: '24px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', marginBottom: '24px' }}>
-              <div style={{ fontSize: '20px', marginBottom: '12px' }}>คะแนนรวม: <strong style={{color: '#fff', fontSize: '28px'}}>{house.score}</strong></div>
-              <div style={{ fontSize: '18px' }}>ตอบถูก: <strong style={{color: '#4ade80'}}>{house.correctAnswers} / 5</strong> ข้อ</div>
+              <div style={{ fontSize: '20px', marginBottom: '12px' }}>คะแนนรวมทั้งหมด: <strong style={{color: '#fff', fontSize: '28px'}}>{house.score}</strong></div>
+              <div style={{ fontSize: '18px' }}>ตอบถูกรวม: <strong style={{color: '#4ade80'}}>{house.correctAnswers} / 10</strong> ข้อ</div>
             </div>
             <p style={{ fontSize: '16px', opacity: 0.8 }}>ขอบคุณที่ร่วมออกเดินทาง<br/>รอผู้สอนประกาศผลบนจอใหญ่</p>
           </div>

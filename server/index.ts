@@ -82,12 +82,36 @@ io.on('connection', (socket) => {
   socket.on('hostNextQuestion', () => {
     if (getSession().state !== 'REVEAL') return;
     
+    const currentIndex = getSession().currentQuestionIndex;
+    
+    // If we just finished Q5 (index 4), go to MID_SCOREBOARD
+    if (currentIndex === 4) {
+      setGameState('MID_SCOREBOARD');
+      io.emit('gameStateUpdate', getSession());
+      return;
+    }
+
+    // Otherwise, move to next question
     const index = nextQuestion();
+    
     if (index >= questions.length) {
       setGameState('FINISHED');
       io.emit('gameStateUpdate', getSession());
       return;
     }
+    startRound();
+  });
+
+  socket.on('hostStartPostVideo', () => {
+    if (getSession().state !== 'MID_SCOREBOARD') return;
+    setGameState('POST_VIDEO');
+    io.emit('gameStateUpdate', getSession());
+  });
+
+  socket.on('hostStartPostTest', () => {
+    if (getSession().state !== 'POST_VIDEO') return;
+    // Move to question index 5 (6th question)
+    nextQuestion(); // this increments index from 4 to 5
     startRound();
   });
 
