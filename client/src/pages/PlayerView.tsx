@@ -193,38 +193,49 @@ const PlayerView: React.FC = () => {
       <div className="w-full flex justify-between items-center mb-6 px-4">
         <div style={{
           background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
-          border: '1px solid rgba(217, 174, 110, 0.5)',
-          borderLeft: '4px solid #D9AE6E',
-          padding: '8px 16px',
-          borderRadius: '12px',
+          border: '2px solid rgba(217, 174, 110, 0.5)',
+          padding: '16px 28px',
+          borderRadius: '16px',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.4), inset 0 0 10px rgba(217, 174, 110, 0.1)'
+          alignItems: 'center',
+          minWidth: '180px',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(217, 174, 110, 0.15)'
         }}>
           <span style={{ 
             color: '#D9AE6E', 
             fontFamily: "'Cinzel', serif", 
             fontWeight: 'bold', 
-            fontSize: '18px',
-            textShadow: '0 0 8px rgba(217, 174, 110, 0.5)',
-            letterSpacing: '0.05em'
+            fontSize: '28px',
+            textShadow: '0 0 12px rgba(217, 174, 110, 0.6)',
+            letterSpacing: '0.05em',
+            lineHeight: 1.2
           }}>
             บ้านที่ {houseId}
           </span>
-          <span style={{ color: '#F6E8CD', opacity: 0.8, fontSize: '12px', marginTop: '2px' }}>ผู้เข้าแข่งขัน</span>
+          <span style={{ color: '#F6E8CD', opacity: 0.9, fontSize: '16px', marginTop: '4px', fontWeight: 'bold', letterSpacing: '0.05em' }}>ผู้เข้าแข่งขัน</span>
         </div>
+
         <div style={{ 
-          background: 'rgba(217, 174, 110, 0.15)', 
-          border: '1px solid rgba(217, 174, 110, 0.4)', 
-          padding: '8px 16px', 
+          background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
+          border: '2px solid rgba(217, 174, 110, 0.5)',
+          padding: '16px 28px',
           borderRadius: '16px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+          minWidth: '180px',
+          boxShadow: '0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(217, 174, 110, 0.15)'
         }}>
-          <span className="text-gold text-xs font-bold tracking-wider mb-1">SCORE</span>
-          <span className="text-white font-bold text-2xl" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+          <span style={{ 
+            color: '#D9AE6E', 
+            fontFamily: "'Cinzel', serif", 
+            fontWeight: 'bold', 
+            fontSize: '16px',
+            textShadow: '0 0 12px rgba(217, 174, 110, 0.6)',
+            letterSpacing: '0.1em'
+          }}>SCORE</span>
+          <span style={{ color: '#fff', fontSize: '36px', fontWeight: 'bold', marginTop: '2px', textShadow: '0 4px 8px rgba(0,0,0,0.8)', lineHeight: 1 }}>
             {house.score}
           </span>
         </div>
