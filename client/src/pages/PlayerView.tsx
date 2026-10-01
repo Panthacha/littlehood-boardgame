@@ -23,6 +23,14 @@ const PlayerView: React.FC = () => {
   const [countdown, setCountdown] = useState(0);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
+  // New states for Night Mode redesign
+  const [witchAction, setWitchAction] = useState<'protect' | 'attack' | null>(null);
+  const [showHint, setShowHint] = useState<{ targetId: number; hint: string } | null>(null);
+  const [hintCountdown, setHintCountdown] = useState(0);
+  const [wolfEarned, setWolfEarned] = useState(false);
+  const [actionUsed, setActionUsed] = useState(false);
+  const [selectedTarget, setSelectedTarget] = useState<number | null>(null);
+
   useEffect(() => {
     if (!socket || !connected || !houseId) return;
 
@@ -43,6 +51,20 @@ const PlayerView: React.FC = () => {
       socket.off('countdownUpdate', onCountdown);
     };
   }, [socket, connected, sessionId, houseId]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showHint && hintCountdown > 0) {
+      timer = setTimeout(() => {
+        setHintCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (showHint && hintCountdown === 0) {
+      // Auto-close hint when time is up
+      setShowHint(null);
+      setActionUsed(true); // Lock the action
+    }
+    return () => clearTimeout(timer);
+  }, [showHint, hintCountdown]);
 
   if (error) {
     return <div className="min-h-screen forest-bg p-6 text-center text-white">{error}</div>;
@@ -221,87 +243,139 @@ const PlayerView: React.FC = () => {
               <p style={{ marginTop: '8px', fontStyle: 'italic', color: '#ccc' }}>"{roleInfo.hint}"</p>
             </div>
             
-            {house.usedNightSkill ? (
-              <div style={{ padding: '16px', background: 'rgba(74, 222, 128, 0.2)', borderRadius: '12px', color: '#4ade80', fontWeight: 'bold' }}>
+            {(house.usedNightSkill || actionUsed) && !showHint && !wolfEarned ? (
+              <div style={{ padding: '16px', background: 'rgba(74, 222, 128, 0.2)', borderRadius: '12px', color: '#4ade80', fontWeight: 'bold', textAlign: 'center' }}>
                 คุณใช้ทักษะไปแล้วในคืนนี้ ให้หลับตาลง...
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 style={{ fontSize: '20px', color: '#D9AE6E' }}>ทักษะกลางคืน: {roleInfo.skillName}</h3>
+                {!showHint && !wolfEarned && <h3 style={{ fontSize: '20px', color: '#D9AE6E' }}>ทักษะกลางคืน: {roleInfo.skillName}</h3>}
                 
                 {house.role === 'WOODCUTTER' && house.woodcutterResult ? (
                   <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '12px' }}>
-                    <p style={{ color: '#fff', marginBottom: '12px' }}>ระบบสุ่มบ้านผู้ต้องสงสัยมาให้ 3 หลัง มี 1 หลังในนี้เป็น <strong>หมาป่า</strong> แน่นอน:</p>
-                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                      {house.woodcutterResult.map(h => (
-                        <div key={h} style={{ fontSize: '24px', fontWeight: 'bold', color: '#D9AE6E', padding: '12px 20px', background: '#333', borderRadius: '8px' }}>
-                          บ้าน {h}
-                        </div>
-                      ))}
+                    <p style={{ color: '#fff', marginBottom: '12px', textAlign: 'center' }}>ระบบสุ่มบ้านผู้ต้องสงสัยมาให้ 3 หลัง มี 1 หลังในนี้เป็น <strong>หมาป่า</strong> แน่นอน:</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', justifyContent: 'center' }}>
+                      {[1, 2, 3, 4, 5, 6].filter(h => h !== houseId).map(h => {
+                        const isSuspect = house.woodcutterResult!.includes(h);
+                        return (
+                          <div key={h} style={{ 
+                            opacity: isSuspect ? 1 : 0.3,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center',
+                            background: '#333', borderRadius: '8px', padding: '8px'
+                          }}>
+                            <img src={`/houses/${h}.png`} alt={`บ้าน ${h}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px' }} />
+                            <span style={{ color: isSuspect ? '#D9AE6E' : '#fff', fontWeight: 'bold', fontSize: '14px' }}>บ้าน {h} {isSuspect && '🔍'}</span>
+                          </div>
+                        )
+                      })}
                     </div>
                     <button 
                       style={{ marginTop: '16px', width: '100%', padding: '12px', background: '#D9AE6E', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                      onClick={() => socket?.emit('useNightSkill', { houseId })}
+                      onClick={() => socket?.emit('useNightSkill', { houseId }, () => setActionUsed(true))}
+                      disabled={actionUsed || house.usedNightSkill}
                     >
                       รับทราบและหลับตา
                     </button>
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <select 
-                      id="targetSelect"
-                      style={{ padding: '12px', borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #555', fontSize: '18px' }}
+                ) : house.role === 'WITCH' && !witchAction ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '8px' }}>
+                    <p style={{ color: '#ccc', fontStyle: 'italic', textAlign: 'center' }}>เลือกพลังที่คุณต้องการใช้ในคืนนี้</p>
+                    <button 
+                      style={{ padding: '16px', background: '#4ade80', color: '#000', borderRadius: '12px', fontWeight: 'bold', fontSize: '20px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(74, 222, 128, 0.3)' }}
+                      onClick={() => setWitchAction('protect')}
                     >
-                      <option value="">-- เลือกบ้านเป้าหมาย --</option>
-                      {[1, 2, 3, 4, 5, 6].filter(h => h !== houseId).map(h => (
-                        <option key={h} value={h}>บ้านที่ {h}</option>
-                      ))}
-                    </select>
-                    
-                    {house.role === 'WITCH' ? (
-                      <div style={{ display: 'flex', gap: '12px' }}>
+                      🧪 ช่วย (ปกป้อง)
+                    </button>
+                    <button 
+                      style={{ padding: '16px', background: '#ff4757', color: '#fff', borderRadius: '12px', fontWeight: 'bold', fontSize: '20px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(255, 71, 87, 0.3)' }}
+                      onClick={() => setWitchAction('attack')}
+                    >
+                      ☠️ ฆ่า (โจมตี)
+                    </button>
+                  </div>
+                ) : showHint ? (
+                  <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.8)', padding: '32px 16px', borderRadius: '16px', border: '2px solid #D9AE6E' }}>
+                    <h3 style={{ fontSize: '24px', color: '#D9AE6E', marginBottom: '24px' }}>คำใบ้บทบาทของบ้านที่ {showHint.targetId}</h3>
+                    <p style={{ fontSize: '22px', color: '#fff', fontStyle: 'italic', marginBottom: '32px' }}>"{showHint.hint}"</p>
+                    <div style={{ fontSize: '64px', color: '#ff4757', fontWeight: 'bold', textShadow: '0 0 20px rgba(255,71,87,0.5)' }}>{hintCountdown}</div>
+                    <p style={{ color: '#ccc', marginTop: '16px' }}>กำลังปิดอัตโนมัติ...</p>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    {house.role === 'WITCH' && witchAction && (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <p style={{ color: witchAction === 'protect' ? '#4ade80' : '#ff4757', fontWeight: 'bold', marginBottom: '12px', textAlign: 'center', fontSize: '18px' }}>
+                          {witchAction === 'protect' ? 'คุณเป็นคนดี คุณเลือกที่จะปกป้องบ้านหลังไหน?' : 'ตัวอันตรายมีอยู่ ต้องกำจัด คุณเลือกที่จะกำจัดบ้านหลังไหน?'}
+                        </p>
                         <button 
-                          style={{ flex: 1, padding: '12px', background: '#4ade80', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                          onClick={() => {
-                            const val = (document.getElementById('targetSelect') as HTMLSelectElement).value;
-                            if (val) socket?.emit('useNightSkill', { houseId, targetId: parseInt(val), action: 'protect' });
-                          }}
+                          style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #ccc', color: '#ccc', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}
+                          onClick={() => setWitchAction(null)}
                         >
-                          🧪 ช่วย (ปกป้อง)
-                        </button>
-                        <button 
-                          style={{ flex: 1, padding: '12px', background: '#ff4757', color: '#fff', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                          onClick={() => {
-                            const val = (document.getElementById('targetSelect') as HTMLSelectElement).value;
-                            if (val) socket?.emit('useNightSkill', { houseId, targetId: parseInt(val), action: 'attack' });
-                          }}
-                        >
-                          ☠️ ฆ่า (โจมตี)
+                          ↩ กลับไปเลือกพลังใหม่
                         </button>
                       </div>
-                    ) : (
-                      <button 
-                        style={{ padding: '12px', background: '#D9AE6E', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                        onClick={() => {
-                          const val = (document.getElementById('targetSelect') as HTMLSelectElement).value;
-                          if (val) {
-                            socket?.emit('useNightSkill', { houseId, targetId: parseInt(val) }, (res: any) => {
-                               // For RED_RIDING_HOOD, we might want to alert the hint, but let's keep it simple: 
-                               // the server currently doesn't return the hint in the callback.
-                               // Let's just alert it from the session data!
-                               if (house.role === 'RED_RIDING_HOOD') {
-                                 const targetRole = session.houses[parseInt(val)].role;
-                                 if (targetRole) {
-                                   const targetHint = roleData[targetRole as keyof typeof roleData]?.hint;
-                                   alert(`คำใบ้ของบ้านที่ ${val} คือ:\n"${targetHint}"`);
-                                 }
-                               }
-                            });
-                          }
-                        }}
-                      >
-                        ยืนยันการใช้ทักษะ
-                      </button>
+                    )}
+                    
+                    {wolfEarned && (
+                      <div style={{ background: 'rgba(255, 215, 0, 0.2)', color: '#FFD700', padding: '24px 16px', borderRadius: '16px', border: '2px solid #FFD700', textAlign: 'center', fontWeight: 'bold', fontSize: '28px', boxShadow: '0 0 20px rgba(255,215,0,0.3)', margin: '16px 0' }}>
+                        You Earn 100 Points! 🐺
+                      </div>
+                    )}
+
+                    {!wolfEarned && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
+                        {[1, 2, 3, 4, 5, 6].filter(h => h !== houseId).map(h => (
+                          <button 
+                            key={h}
+                            disabled={actionUsed || house.usedNightSkill}
+                            onClick={() => {
+                              setSelectedTarget(h);
+                              const action = house.role === 'WITCH' ? witchAction! : undefined;
+                              
+                              socket?.emit('useNightSkill', { houseId, targetId: h, action }, (res: any) => {
+                                if (house.role === 'RED_RIDING_HOOD') {
+                                  const targetRole = session.houses[h]?.role;
+                                  const targetHint = targetRole ? roleData[targetRole as keyof typeof roleData]?.hint : 'ไม่ทราบข้อมูล';
+                                  setShowHint({ targetId: h, hint: targetHint || 'ไม่ทราบข้อมูล' });
+                                  setHintCountdown(5);
+                                } else if (house.role === 'WOLF') {
+                                  setWolfEarned(true);
+                                  setTimeout(() => setActionUsed(true), 2500); // Show popup for 2.5s before hiding
+                                } else {
+                                  // For Grandma, Hunter, Witch, wait a bit so they can see the badge before it disappears
+                                  setTimeout(() => setActionUsed(true), 1500);
+                                }
+                              });
+                            }}
+                            style={{
+                              background: '#222',
+                              border: selectedTarget === h 
+                                ? (witchAction === 'protect' || house.role === 'GRANDMA' ? '3px solid #4ade80' : '3px solid #ff4757')
+                                : '2px solid #444',
+                              borderRadius: '12px',
+                              padding: '12px 8px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              cursor: (actionUsed || house.usedNightSkill) ? 'default' : 'pointer',
+                              transition: 'all 0.2s',
+                              opacity: (actionUsed || house.usedNightSkill) && selectedTarget !== h ? 0.4 : 1,
+                              position: 'relative'
+                            }}
+                          >
+                            <img src={`/houses/${h}.png`} alt={`บ้าน ${h}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px' }} />
+                            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>บ้าน {h}</span>
+                            
+                            {/* Feedback Badges */}
+                            {selectedTarget === h && (
+                              <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '28px', filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.8))', zIndex: 10 }}>
+                                {(house.role === 'GRANDMA' || witchAction === 'protect') && '🛡️'}
+                                {(house.role === 'HUNTER' || witchAction === 'attack') && '🏹'}
+                              </div>
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 )}

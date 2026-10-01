@@ -424,20 +424,41 @@ const HostView: React.FC = () => {
           height: '100%', minHeight: '60vh'
         }}>
           <div style={{
-            background: 'linear-gradient(145deg, rgba(10, 15, 20, 0.95), rgba(0, 0, 0, 0.98))',
-            border: '2px solid rgba(100, 150, 255, 0.5)',
-            borderRadius: '32px',
-            padding: '60px',
-            maxWidth: '800px',
+            background: 'linear-gradient(145deg, rgba(5, 10, 25, 0.95), rgba(0, 5, 15, 0.98))',
+            border: isAwake ? '3px solid rgba(217, 174, 110, 0.8)' : '3px solid rgba(112, 161, 255, 0.8)',
+            borderRadius: '40px',
+            padding: '80px',
+            maxWidth: '1000px',
             textAlign: 'center',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(100, 150, 255, 0.1)',
-            backdropFilter: 'blur(15px)'
+            boxShadow: isAwake 
+              ? '0 0 80px rgba(217, 174, 110, 0.4), inset 0 0 50px rgba(217, 174, 110, 0.2)'
+              : '0 0 80px rgba(112, 161, 255, 0.4), inset 0 0 50px rgba(112, 161, 255, 0.2)',
+            backdropFilter: 'blur(20px)',
+            transform: 'scale(1.05)',
+            transition: 'all 0.5s ease-in-out'
           }}>
-            <h2 style={{ fontSize: '48px', fontFamily: "'Cinzel', serif", fontWeight: 'bold', color: isAwake ? '#D9AE6E' : '#70a1ff', textShadow: '0 4px 15px rgba(0,0,0,0.8)', marginBottom: '24px' }}>
-              {isAwake ? `👁️ บ้านที่ ${session.awakeHouseId} ลืมตาขึ้น...` : '🌙 เข้าสู่โหมดกลางคืน...'}
+            <h2 style={{ 
+              fontSize: '84px', 
+              fontFamily: "'Cinzel', serif", 
+              fontWeight: 'bold', 
+              color: isAwake ? '#F6E8CD' : '#D6E4FF', 
+              textShadow: isAwake 
+                ? '0 0 30px rgba(217,174,110,0.8), 0 0 10px rgba(217,174,110,0.5)'
+                : '0 0 30px rgba(112,161,255,0.8), 0 0 10px rgba(112,161,255,0.5)', 
+              marginBottom: '30px',
+              lineHeight: '1.2'
+            }}>
+              {isAwake ? `👁️ บ้านที่ ${session.awakeHouseId}` : '🌙 เข้าสู่โหมดกลางคืน...'}
+              {isAwake && <div style={{ fontSize: '64px', color: '#D9AE6E', marginTop: '15px' }}>ลืมตาขึ้น...</div>}
             </h2>
-            <p style={{ fontSize: '24px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
-              {isAwake ? 'มีบางสิ่งที่กำลังจะเกิดขึ้นในความมืดมิด' : 'ทุกบ้านหลับตาลงและรอฟังเสียงสวรรค์เรียกหา'}
+            <p style={{ 
+              fontSize: '32px', 
+              color: isAwake ? 'rgba(217,174,110,0.8)' : 'rgba(112,161,255,0.8)', 
+              fontStyle: 'italic',
+              fontWeight: '300',
+              letterSpacing: '2px'
+            }}>
+              {isAwake ? '✨ มีบางสิ่งที่กำลังจะเกิดขึ้นในความมืดมิด ✨' : '✨ ทุกบ้านหลับตาลงและรอฟังเสียงสวรรค์เรียกหา ✨'}
             </p>
           </div>
         </div>
@@ -816,7 +837,9 @@ const HostView: React.FC = () => {
                 autoplay: 1,
                 controls: 0,
                 rel: 0,
-                modestbranding: 1
+                modestbranding: 1,
+                cc_load_policy: 0,
+                iv_load_policy: 3
               } 
             }}
             onEnd={() => {

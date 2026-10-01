@@ -160,14 +160,9 @@ export const processNightSkill = (houseId: number, targetId?: number, action?: s
 
   if (role === 'WOLF' && targetId) {
     const target = currentSession.houses[targetId];
-    if (target && target.score >= 100) {
+    if (target) {
       target.score -= 100;
       house.score += 100;
-      success = true;
-    } else if (target) {
-      // steal whatever they have
-      house.score += target.score;
-      target.score = 0;
       success = true;
     }
   } else if (role === 'GRANDMA' && targetId) {
