@@ -483,7 +483,24 @@ const HostView: React.FC = () => {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center', gap: '24px' }}>
+              <button 
+                onClick={() => socket?.emit('hostStartNightMode')}
+                style={{
+                  background: 'linear-gradient(135deg, #2c3e50, #000000)',
+                  color: '#D9AE6E',
+                  border: '2px solid #D9AE6E',
+                  padding: '16px 40px',
+                  borderRadius: '16px',
+                  fontSize: '22px',
+                  fontWeight: 'bold',
+                  fontFamily: "'Noto Sans Thai', sans-serif",
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(217, 174, 110, 0.3)'
+                }}
+              >
+                เข้าสู่โหมดกลางคืน (เล่น Werewolf) 🐺
+              </button>
               <button 
                 onClick={() => socket?.emit('hostNewRound')}
                 style={{
@@ -790,7 +807,7 @@ const HostView: React.FC = () => {
           justifyContent: 'center'
         }}>
           <video 
-            src="/0929-fast.mp4" 
+            src="/0929(3).mov" 
             autoPlay 
             onEnded={() => {
               setPlayingIntro(false);
