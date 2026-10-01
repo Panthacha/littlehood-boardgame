@@ -5,6 +5,7 @@ import { AdminControlModal } from '../components/AdminControlModal';
 import { QRCodeSVG } from 'qrcode.react';
 import type { Question } from '../types';
 import { getCharacter } from '../constants/characters';
+import YouTube from 'react-youtube';
 
 const HostView: React.FC = () => {
   const { socket, session, connected } = useSocket();
@@ -806,17 +807,24 @@ const HostView: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <video 
-            src="/intro.mp4" 
-            autoPlay 
-            playsInline
-            preload="auto"
-            onEnded={() => {
+          <YouTube 
+            videoId="vb5Ue65N86o" 
+            opts={{ 
+              width: '100%', 
+              height: '100%', 
+              playerVars: { 
+                autoplay: 1,
+                controls: 0,
+                rel: 0,
+                modestbranding: 1
+              } 
+            }}
+            onEnd={() => {
               setPlayingIntro(false);
               setActiveTab('QUIZ');
               socket?.emit('hostStartGame');
             }}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            style={{ width: '100vw', height: '100vh' }}
           />
           <button 
             onClick={() => {
