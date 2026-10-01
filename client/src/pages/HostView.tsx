@@ -415,6 +415,34 @@ const HostView: React.FC = () => {
       );
     }
 
+    if (session.state === 'NIGHT_MODE') {
+      const isAwake = session.awakeHouseId !== null && session.awakeHouseId !== undefined;
+      return (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          height: '100%', minHeight: '60vh'
+        }}>
+          <div style={{
+            background: 'linear-gradient(145deg, rgba(10, 15, 20, 0.95), rgba(0, 0, 0, 0.98))',
+            border: '2px solid rgba(100, 150, 255, 0.5)',
+            borderRadius: '32px',
+            padding: '60px',
+            maxWidth: '800px',
+            textAlign: 'center',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(100, 150, 255, 0.1)',
+            backdropFilter: 'blur(15px)'
+          }}>
+            <h2 style={{ fontSize: '48px', fontFamily: "'Cinzel', serif", fontWeight: 'bold', color: isAwake ? '#D9AE6E' : '#70a1ff', textShadow: '0 4px 15px rgba(0,0,0,0.8)', marginBottom: '24px' }}>
+              {isAwake ? `👁️ บ้านที่ ${session.awakeHouseId} ลืมตาขึ้น...` : '🌙 เข้าสู่โหมดกลางคืน...'}
+            </h2>
+            <p style={{ fontSize: '24px', color: 'rgba(255,255,255,0.7)', fontStyle: 'italic' }}>
+              {isAwake ? 'มีบางสิ่งที่กำลังจะเกิดขึ้นในความมืดมิด' : 'ทุกบ้านหลับตาลงและรอฟังเสียงสวรรค์เรียกหา'}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     if (session.state === 'FINISHED') {
        // Sort houses by score
        const sorted = Object.values(session.houses).sort((a, b) => b.score - a.score);
@@ -500,7 +528,7 @@ const HostView: React.FC = () => {
           boxShadow: '0 12px 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(217, 174, 110, 0.1)'
         }}>
           <div style={{ fontSize: '28px', color: '#D9AE6E', fontFamily: "'Cinzel', serif", fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-            ภารกิจที่ {session.currentQuestionIndex + 1} <span style={{opacity: 0.6, fontSize: '22px'}}>/ 5</span>
+            ภารกิจที่ {session.currentQuestionIndex + 1} <span style={{opacity: 0.6, fontSize: '22px'}}>/ 10</span>
           </div>
           <div style={{ 
             fontSize: '56px', 

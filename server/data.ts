@@ -63,7 +63,7 @@ export const questions: Question[] = [
   },
   {
     id: 6,
-    text: '[Post-Test] ข้อใดคือองค์ประกอบของบอร์ดเกม?',
+    text: 'ข้อใดคือองค์ประกอบของบอร์ดเกม?',
     options: [
       { key: 'ก', text: 'เมาส์', shape: 'triangle', color: 'orange' },
       { key: 'ข', text: 'ชิ้นส่วนและกติกา', shape: 'diamond', color: 'blue' },
@@ -75,7 +75,7 @@ export const questions: Question[] = [
   },
   {
     id: 7,
-    text: '[Post-Test] เป้าหมายของเกมมีไว้เพื่ออะไร?',
+    text: 'เป้าหมายของเกมมีไว้เพื่ออะไร?',
     options: [
       { key: 'ก', text: 'ตกแต่ง', shape: 'triangle', color: 'orange' },
       { key: 'ข', text: 'บอกผู้เล่นว่าต้องทำอะไรเพื่อชนะ', shape: 'diamond', color: 'blue' },
@@ -87,7 +87,7 @@ export const questions: Question[] = [
   },
   {
     id: 8,
-    text: '[Post-Test] เกมที่ยุติธรรมหมายถึงอะไร?',
+    text: 'เกมที่ยุติธรรมหมายถึงอะไร?',
     options: [
       { key: 'ก', text: 'คนเล่นก่อนชนะเสมอ', shape: 'triangle', color: 'orange' },
       { key: 'ข', text: 'ผู้เล่นมีโอกาสชนะใกล้เคียงกันภายใต้กติกาที่เป็นธรรม', shape: 'diamond', color: 'blue' },
@@ -99,7 +99,7 @@ export const questions: Question[] = [
   },
   {
     id: 9,
-    text: '[Post-Test] หลักการใดทำให้อยากเล่นซ้ำ?',
+    text: 'หลักการใดทำให้อยากเล่นซ้ำ?',
     options: [
       { key: 'ก', text: 'กติกายากเกินไป', shape: 'triangle', color: 'orange' },
       { key: 'ข', text: 'จบเร็วเกินไปเสมอ', shape: 'diamond', color: 'blue' },
@@ -111,7 +111,7 @@ export const questions: Question[] = [
   },
   {
     id: 10,
-    text: '[Post-Test] ธีมในบอร์ดเกมคืออะไร?',
+    text: 'ธีมในบอร์ดเกมคืออะไร?',
     options: [
       { key: 'ก', text: 'เรื่องราวและบรรยากาศของเกม', shape: 'triangle', color: 'orange' },
       { key: 'ข', text: 'ชื่อผู้เล่น', shape: 'diamond', color: 'blue' },

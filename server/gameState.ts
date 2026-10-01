@@ -45,6 +45,62 @@ export const resetSession = () => {
   return currentSession;
 };
 
+export const initializeNightMode = () => {
+  currentSession.state = 'NIGHT_MODE';
+  currentSession.awakeHouseId = null;
+  
+  const roles: import('./types').Role[] = [
+    'RED_RIDING_HOOD', 
+    'GRANDMA', 
+    'WOLF', 
+    'HUNTER', 
+    'WOODCUTTER', 
+    'WITCH'
+  ];
+  
+  // Shuffle roles
+  for (let i = roles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [roles[i], roles[j]] = [roles[j], roles[i]];
+  }
+
+  // Find wolf house ID for woodcutter
+  let wolfHouseId = 1;
+  
+  // Assign roles
+  for (let i = 1; i <= 6; i++) {
+    const role = roles[i - 1];
+    if (role === 'WOLF') wolfHouseId = i;
+    
+    currentSession.houses[i] = {
+      ...currentSession.houses[i],
+      role: role,
+      isProtected: false,
+      injuries: 0,
+      isDead: false,
+      usedNightSkill: false,
+      woodcutterResult: undefined
+    };
+  }
+  
+  // Setup woodcutter result (3 random houses including the wolf)
+  const otherHouses = [1,2,3,4,5,6].filter(id => id !== wolfHouseId);
+  // shuffle other houses
+  for (let i = otherHouses.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [otherHouses[i], otherHouses[j]] = [otherHouses[j], otherHouses[i]];
+  }
+  const woodcutterResult = [wolfHouseId, otherHouses[0], otherHouses[1]];
+  // sort to hide which one is wolf
+  woodcutterResult.sort((a, b) => a - b);
+  
+  for (let i = 1; i <= 6; i++) {
+    if (currentSession.houses[i].role === 'WOODCUTTER') {
+      currentSession.houses[i].woodcutterResult = woodcutterResult;
+    }
+  }
+};
+
 export const joinHouse = (socketId: string, houseId: number): HouseData | null => {
   if (houseId < 1 || houseId > 6) return null;
   const house = currentSession.houses[houseId];
@@ -91,6 +147,67 @@ export const submitAnswer = (houseId: number, key: string) => {
   house.hasSubmitted = true;
   house.selectedKey = key;
   return true;
+};
+
+export const processNightSkill = (houseId: number, targetId?: number, action?: string) => {
+  if (currentSession.state !== 'NIGHT_MODE') return false;
+  
+  const house = currentSession.houses[houseId];
+  if (!house || house.usedNightSkill) return false;
+
+  const role = house.role;
+  let success = false;
+
+  if (role === 'WOLF' && targetId) {
+    const target = currentSession.houses[targetId];
+    if (target && target.score >= 100) {
+      target.score -= 100;
+      house.score += 100;
+      success = true;
+    } else if (target) {
+      // steal whatever they have
+      house.score += target.score;
+      target.score = 0;
+      success = true;
+    }
+  } else if (role === 'GRANDMA' && targetId) {
+    const target = currentSession.houses[targetId];
+    if (target) {
+      target.isProtected = true;
+      success = true;
+    }
+  } else if (role === 'HUNTER' && targetId) {
+    const target = currentSession.houses[targetId];
+    if (target) {
+      if (!target.isProtected) {
+        target.injuries = (target.injuries || 0) + 1;
+        if (target.injuries >= 2) target.isDead = true;
+      }
+      success = true;
+    }
+  } else if (role === 'WITCH' && targetId && action) {
+    const target = currentSession.houses[targetId];
+    if (target) {
+      if (action === 'protect') {
+        target.isProtected = true;
+        success = true;
+      } else if (action === 'attack') {
+        if (!target.isProtected) {
+          target.injuries = (target.injuries || 0) + 1;
+          if (target.injuries >= 2) target.isDead = true;
+        }
+        success = true;
+      }
+    }
+  } else if (role === 'RED_RIDING_HOOD' || role === 'WOODCUTTER') {
+    // Skills that just view information don't need server state mutations besides marking used
+    success = true;
+  }
+
+  if (success) {
+    house.usedNightSkill = true;
+  }
+  return success;
 };
 
 export const calculateScores = () => {

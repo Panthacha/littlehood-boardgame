@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
-import { Triangle, Square, Circle, Diamond } from 'lucide-react';
+import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
+
+const roleData = {
+  RED_RIDING_HOOD: { name: 'หนูน้อยหมวกแดง', hint: 'ฉันได้รับมอบหมายให้นำบางสิ่งไปยังปลายทาง แต่ระหว่างทางกลับพบทางเลือกที่ไม่ควรเลือก', skillName: 'ตรวจสอบคำใบ้บทบาท', icon: <Search /> },
+  GRANDMA: { name: 'คุณยาย', hint: 'ฉันกลายเป็นเป้าหมายของผู้ที่ไม่ได้มีเจตนาดี', skillName: 'ปกป้องบ้าน 1 หลัง', icon: <Shield /> },
+  WOLF: { name: 'หมาป่า', hint: 'ความผิดพลาดของคนอื่นคือช่องทางที่ทำให้แผนของฉันสำเร็จ', skillName: 'ขโมยคะแนน (100 คะแนน)', icon: <Skull /> },
+  HUNTER: { name: 'นายพราน', hint: 'ก่อนที่ฉันจะพบใคร ฉันต้องรู้ก่อนว่า “กำลังตามหาอะไร”', skillName: 'โจมตีบ้าน 1 หลัง', icon: <Target /> },
+  WOODCUTTER: { name: 'คนตัดไม้', hint: 'การตัดสินใจของฉันเกิดขึ้นจากสิ่งที่พบ ไม่ใช่จากคำขอของคนที่เกี่ยวข้อง', skillName: 'ค้นหาบ้านหมาป่า', icon: <Eye /> },
+  WITCH: { name: 'แม่มด', hint: 'การพบฉันอาจเป็นจุดเริ่มต้นของความหวัง หรือจุดสิ้นสุดของทุกอย่าง', skillName: 'ใช้เวทมนตร์ (ช่วย หรือ ฆ่า)', icon: <Triangle /> }
+};
 
 const PlayerView: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -187,6 +196,117 @@ const PlayerView: React.FC = () => {
           <div style={cardStyle}>
             <h2 style={{ fontSize: '28px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '16px' }}>ช่วงคลิปบทเรียน 🎬</h2>
             <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '24px' }}>กรุณาตั้งใจดูและฟังคลิปบทเรียนบนจอใหญ่นะครับ เดี๋ยวเราจะมีแบบทดสอบ Post-test ท้ายบทเรียน!</p>
+          </div>
+        );
+
+      case 'NIGHT_MODE':
+        if (session.awakeHouseId !== houseId) {
+          return (
+            <div style={{ ...cardStyle, background: '#111', border: '1px solid #333' }}>
+              <h2 style={{ fontSize: '28px', color: '#555', marginBottom: '16px' }}>คืนนี้จงหลับตา...</h2>
+              <p style={{ opacity: 0.5 }}>รอฟังเสียงจากผู้ควบคุมเกม</p>
+            </div>
+          );
+        }
+
+        const roleInfo = roleData[house.role as keyof typeof roleData];
+        if (!roleInfo) return null;
+
+        return (
+          <div style={{ ...cardStyle, background: 'linear-gradient(145deg, #1a1a1a, #0a0a0a)', border: '2px solid #D9AE6E' }}>
+            <h2 style={{ fontSize: '32px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '8px' }}>คุณลืมตาแล้ว</h2>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', marginBottom: '16px' }}>บทบาท: {roleInfo.name}</div>
+            <div style={{ padding: '16px', background: 'rgba(217, 174, 110, 0.1)', borderRadius: '12px', border: '1px solid rgba(217, 174, 110, 0.3)', marginBottom: '24px' }}>
+              <strong style={{ color: '#D9AE6E' }}>คำใบ้ของคุณ:</strong>
+              <p style={{ marginTop: '8px', fontStyle: 'italic', color: '#ccc' }}>"{roleInfo.hint}"</p>
+            </div>
+            
+            {house.usedNightSkill ? (
+              <div style={{ padding: '16px', background: 'rgba(74, 222, 128, 0.2)', borderRadius: '12px', color: '#4ade80', fontWeight: 'bold' }}>
+                คุณใช้ทักษะไปแล้วในคืนนี้ ให้หลับตาลง...
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h3 style={{ fontSize: '20px', color: '#D9AE6E' }}>ทักษะกลางคืน: {roleInfo.skillName}</h3>
+                
+                {house.role === 'WOODCUTTER' && house.woodcutterResult ? (
+                  <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '12px' }}>
+                    <p style={{ color: '#fff', marginBottom: '12px' }}>ระบบสุ่มบ้านผู้ต้องสงสัยมาให้ 3 หลัง มี 1 หลังในนี้เป็น <strong>หมาป่า</strong> แน่นอน:</p>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                      {house.woodcutterResult.map(h => (
+                        <div key={h} style={{ fontSize: '24px', fontWeight: 'bold', color: '#D9AE6E', padding: '12px 20px', background: '#333', borderRadius: '8px' }}>
+                          บ้าน {h}
+                        </div>
+                      ))}
+                    </div>
+                    <button 
+                      style={{ marginTop: '16px', width: '100%', padding: '12px', background: '#D9AE6E', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                      onClick={() => socket?.emit('useNightSkill', { houseId })}
+                    >
+                      รับทราบและหลับตา
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <select 
+                      id="targetSelect"
+                      style={{ padding: '12px', borderRadius: '8px', background: '#333', color: '#fff', border: '1px solid #555', fontSize: '18px' }}
+                    >
+                      <option value="">-- เลือกบ้านเป้าหมาย --</option>
+                      {[1, 2, 3, 4, 5, 6].filter(h => h !== houseId).map(h => (
+                        <option key={h} value={h}>บ้านที่ {h}</option>
+                      ))}
+                    </select>
+                    
+                    {house.role === 'WITCH' ? (
+                      <div style={{ display: 'flex', gap: '12px' }}>
+                        <button 
+                          style={{ flex: 1, padding: '12px', background: '#4ade80', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                          onClick={() => {
+                            const val = (document.getElementById('targetSelect') as HTMLSelectElement).value;
+                            if (val) socket?.emit('useNightSkill', { houseId, targetId: parseInt(val), action: 'protect' });
+                          }}
+                        >
+                          🧪 ช่วย (ปกป้อง)
+                        </button>
+                        <button 
+                          style={{ flex: 1, padding: '12px', background: '#ff4757', color: '#fff', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                          onClick={() => {
+                            const val = (document.getElementById('targetSelect') as HTMLSelectElement).value;
+                            if (val) socket?.emit('useNightSkill', { houseId, targetId: parseInt(val), action: 'attack' });
+                          }}
+                        >
+                          ☠️ ฆ่า (โจมตี)
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        style={{ padding: '12px', background: '#D9AE6E', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
+                        onClick={() => {
+                          const val = (document.getElementById('targetSelect') as HTMLSelectElement).value;
+                          if (val) {
+                            socket?.emit('useNightSkill', { houseId, targetId: parseInt(val) }, (res: any) => {
+                               // For RED_RIDING_HOOD, we might want to alert the hint, but let's keep it simple: 
+                               // the server currently doesn't return the hint in the callback.
+                               // Let's just alert it from the session data!
+                               if (house.role === 'RED_RIDING_HOOD') {
+                                 const targetRole = session.houses[parseInt(val)].role;
+                                 if (targetRole) {
+                                   const targetHint = roleData[targetRole as keyof typeof roleData]?.hint;
+                                   alert(`คำใบ้ของบ้านที่ ${val} คือ:\n"${targetHint}"`);
+                                 }
+                               }
+                            });
+                          }
+                        }}
+                      >
+                        ยืนยันการใช้ทักษะ
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         );
 

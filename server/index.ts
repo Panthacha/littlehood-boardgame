@@ -13,7 +13,9 @@ import {
   startCountdown,
   startQuestionTimer,
   nextQuestion,
-  resetSession
+  resetSession,
+  initializeNightMode,
+  processNightSkill
 } from './gameState';
 import { questions } from './data';
 
@@ -138,6 +140,26 @@ io.on('connection', (socket) => {
   socket.on('hostNewRound', () => {
     resetSession();
     io.emit('gameStateUpdate', getSession());
+  });
+
+  socket.on('hostStartNightMode', () => {
+    if (getSession().state !== 'FINISHED') return;
+    initializeNightMode();
+    io.emit('gameStateUpdate', getSession());
+  });
+
+  socket.on('hostWakeUpHouse', (houseId: number | null) => {
+    if (getSession().state !== 'NIGHT_MODE') return;
+    getSession().awakeHouseId = houseId;
+    io.emit('gameStateUpdate', getSession());
+  });
+
+  socket.on('useNightSkill', (data, callback) => {
+    const success = processNightSkill(data.houseId, data.targetId, data.action);
+    if (success) {
+      io.emit('gameStateUpdate', getSession());
+    }
+    callback({ success });
   });
 
   socket.on('disconnect', () => {

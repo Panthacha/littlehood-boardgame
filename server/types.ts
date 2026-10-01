@@ -1,4 +1,6 @@
-export type GameState = 'LOBBY' | 'COUNTDOWN' | 'QUESTION_OPEN' | 'QUESTION_CLOSED' | 'REVEAL' | 'MID_SCOREBOARD' | 'POST_VIDEO' | 'FINISHED';
+export type GameState = 'LOBBY' | 'COUNTDOWN' | 'QUESTION_OPEN' | 'QUESTION_CLOSED' | 'REVEAL' | 'MID_SCOREBOARD' | 'POST_VIDEO' | 'FINISHED' | 'NIGHT_MODE';
+
+export type Role = 'RED_RIDING_HOOD' | 'GRANDMA' | 'WOLF' | 'HUNTER' | 'WOODCUTTER' | 'WITCH';
 
 export interface Question {
   id: number;
@@ -27,6 +29,12 @@ export interface HouseData {
   hasSubmitted: boolean;
   selectedKey?: string;
   isOnline: boolean;
+  role?: Role;
+  isProtected?: boolean;
+  injuries?: number;
+  isDead?: boolean;
+  usedNightSkill?: boolean;
+  woodcutterResult?: number[]; // [h1, h2, h3]
 }
 
 export interface Session {
@@ -38,6 +46,7 @@ export interface Session {
   timeRemaining: number; // For question timer
   houses: Record<number, HouseData>;
   startTime?: number; // timestamp when question started
+  awakeHouseId?: number | null; // house currently awake in NIGHT_MODE
 }
 
 // Client to Server Events
@@ -51,6 +60,11 @@ export interface ClientToServerEvents {
   hostReveal: () => void;
   hostShowSummary: () => void;
   hostNewRound: () => void;
+  hostStartPostVideo: () => void;
+  hostStartPostTest: () => void;
+  hostStartNightMode: () => void;
+  hostWakeUpHouse: (houseId: number | null) => void;
+  useNightSkill: (data: { houseId: number; targetId?: number; action?: string }, callback: (res: any) => void) => void;
 }
 
 // Server to Client Events
