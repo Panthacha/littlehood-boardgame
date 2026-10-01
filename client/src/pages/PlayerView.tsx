@@ -224,9 +224,9 @@ const PlayerView: React.FC = () => {
       case 'NIGHT_MODE':
         if (session.awakeHouseId !== houseId) {
           return (
-            <div style={{ ...cardStyle, background: '#111', border: '1px solid #333' }}>
-              <h2 style={{ fontSize: '28px', color: '#555', marginBottom: '16px' }}>คืนนี้จงหลับตา...</h2>
-              <p style={{ opacity: 0.5 }}>รอฟังเสียงจากผู้ควบคุมเกม</p>
+            <div style={{ ...cardStyle, background: 'rgba(17, 17, 17, 0.9)', border: '1px solid #333' }}>
+              <h2 style={{ fontSize: '28px', color: '#aaa', marginBottom: '16px' }}>คืนนี้จงหลับตา...</h2>
+              <p style={{ opacity: 0.5, color: '#fff' }}>รอฟังเสียงจากผู้ควบคุมเกม</p>
             </div>
           );
         }
@@ -235,149 +235,184 @@ const PlayerView: React.FC = () => {
         if (!roleInfo) return null;
 
         return (
-          <div style={{ ...cardStyle, background: 'linear-gradient(145deg, #1a1a1a, #0a0a0a)', border: '2px solid #D9AE6E' }}>
-            <h2 style={{ fontSize: '32px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '8px' }}>คุณลืมตาแล้ว</h2>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#fff', marginBottom: '16px' }}>บทบาท: {roleInfo.name}</div>
-            <div style={{ padding: '16px', background: 'rgba(217, 174, 110, 0.1)', borderRadius: '12px', border: '1px solid rgba(217, 174, 110, 0.3)', marginBottom: '24px' }}>
-              <strong style={{ color: '#D9AE6E' }}>คำใบ้ของคุณ:</strong>
-              <p style={{ marginTop: '8px', fontStyle: 'italic', color: '#ccc' }}>"{roleInfo.hint}"</p>
-            </div>
+          <div style={{ width: '100%', maxWidth: '900px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             
+            {/* Wooden Sign Header */}
+            <div style={{
+              backgroundColor: '#8B5A2B',
+              backgroundImage: 'linear-gradient(to bottom, #A06B35, #70441D)',
+              border: '4px solid #4A2B11',
+              borderRadius: '20px',
+              padding: '24px 48px',
+              boxShadow: '0 15px 30px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,0,0,0.4)',
+              textAlign: 'center',
+              marginBottom: '40px',
+              position: 'relative',
+              zIndex: 10
+            }}>
+              <div style={{ position: 'absolute', top: '-10px', left: '20px', width: '12px', height: '30px', background: '#D9AE6E', borderRadius: '4px', border: '2px solid #333', zIndex: -1 }}></div>
+              <div style={{ position: 'absolute', top: '-10px', right: '20px', width: '12px', height: '30px', background: '#D9AE6E', borderRadius: '4px', border: '2px solid #333', zIndex: -1 }}></div>
+              
+              <h1 style={{ fontSize: '42px', color: '#FFF3E0', textShadow: '2px 3px 5px rgba(0,0,0,0.8)', margin: 0, fontWeight: 'bold' }}>
+                {roleInfo.icon} คุณคือ{roleInfo.name}
+              </h1>
+              <p style={{ fontSize: '22px', color: '#FFE0B2', textShadow: '1px 2px 3px rgba(0,0,0,0.8)', marginTop: '8px' }}>
+                {house.role === 'WITCH' && !witchAction 
+                  ? 'คุณเลือกที่จะทำอะไรในคืนนี้' 
+                  : (house.role === 'WOODCUTTER' 
+                      ? 'คุณเลือกที่จะสำรวจความจริง' 
+                      : `คุณเลือกที่จะ${witchAction === 'protect' || house.role === 'GRANDMA' ? 'ปกป้อง' : (witchAction === 'attack' || house.role === 'HUNTER' ? 'โจมตี' : 'ใช้ทักษะกับ')}บ้านหลังไหน`)}
+              </p>
+            </div>
+
             {(house.usedNightSkill || actionUsed) && !showHint && !wolfEarned ? (
-              <div style={{ padding: '16px', background: 'rgba(74, 222, 128, 0.2)', borderRadius: '12px', color: '#4ade80', fontWeight: 'bold', textAlign: 'center' }}>
+              <div style={{ padding: '24px', background: 'rgba(0,0,0,0.7)', borderRadius: '16px', color: '#fff', fontSize: '24px', border: '2px solid #555' }}>
                 คุณใช้ทักษะไปแล้วในคืนนี้ ให้หลับตาลง...
               </div>
+            ) : house.role === 'WITCH' && !witchAction ? (
+              <div style={{ display: 'flex', gap: '24px', marginTop: '20px' }}>
+                <button 
+                  style={{ padding: '24px 48px', background: 'linear-gradient(to bottom, #4ade80, #22c55e)', color: '#000', borderRadius: '20px', fontWeight: 'bold', fontSize: '28px', cursor: 'pointer', boxShadow: '0 10px 20px rgba(0,0,0,0.5)', border: '4px solid #166534' }}
+                  onClick={() => setWitchAction('protect')}
+                >
+                  🧪 ช่วย (ปกป้อง)
+                </button>
+                <button 
+                  style={{ padding: '24px 48px', background: 'linear-gradient(to bottom, #ff4757, #e84118)', color: '#fff', borderRadius: '20px', fontWeight: 'bold', fontSize: '28px', cursor: 'pointer', boxShadow: '0 10px 20px rgba(0,0,0,0.5)', border: '4px solid #7f1d1d' }}
+                  onClick={() => setWitchAction('attack')}
+                >
+                  ☠️ ฆ่า (โจมตี)
+                </button>
+              </div>
+            ) : showHint ? (
+              <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.85)', padding: '40px 32px', borderRadius: '24px', border: '4px solid #D9AE6E', boxShadow: '0 0 40px rgba(217,174,110,0.3)' }}>
+                <h3 style={{ fontSize: '28px', color: '#D9AE6E', marginBottom: '24px' }}>คำใบ้บทบาทของบ้านที่ {showHint.targetId}</h3>
+                <p style={{ fontSize: '28px', color: '#fff', fontStyle: 'italic', marginBottom: '40px' }}>"{showHint.hint}"</p>
+                <div style={{ fontSize: '80px', color: '#ff4757', fontWeight: 'bold', textShadow: '0 0 30px rgba(255,71,87,0.8)' }}>{hintCountdown}</div>
+                <p style={{ color: '#ccc', marginTop: '24px', fontSize: '18px' }}>กำลังปิดอัตโนมัติ...</p>
+              </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {!showHint && !wolfEarned && <h3 style={{ fontSize: '20px', color: '#D9AE6E' }}>ทักษะกลางคืน: {roleInfo.skillName}</h3>}
-                
-                {house.role === 'WOODCUTTER' && house.woodcutterResult ? (
-                  <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '12px' }}>
-                    <p style={{ color: '#fff', marginBottom: '12px', textAlign: 'center' }}>ระบบสุ่มบ้านผู้ต้องสงสัยมาให้ 3 หลัง มี 1 หลังในนี้เป็น <strong>หมาป่า</strong> แน่นอน:</p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', justifyContent: 'center' }}>
-                      {[1, 2, 3, 4, 5, 6].filter(h => h !== houseId).map(h => {
-                        const isSuspect = house.woodcutterResult!.includes(h);
-                        return (
-                          <div key={h} style={{ 
-                            opacity: isSuspect ? 1 : 0.3,
-                            display: 'flex', flexDirection: 'column', alignItems: 'center',
-                            background: '#333', borderRadius: '8px', padding: '8px'
-                          }}>
-                            <img src={`/houses/${h}.png`} alt={`บ้าน ${h}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px' }} />
-                            <span style={{ color: isSuspect ? '#D9AE6E' : '#fff', fontWeight: 'bold', fontSize: '14px' }}>บ้าน {h} {isSuspect && '🔍'}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                    <button 
-                      style={{ marginTop: '16px', width: '100%', padding: '12px', background: '#D9AE6E', color: '#000', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-                      onClick={() => socket?.emit('useNightSkill', { houseId }, () => setActionUsed(true))}
-                      disabled={actionUsed || house.usedNightSkill}
-                    >
-                      รับทราบและหลับตา
-                    </button>
-                  </div>
-                ) : house.role === 'WITCH' && !witchAction ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '8px' }}>
-                    <p style={{ color: '#ccc', fontStyle: 'italic', textAlign: 'center' }}>เลือกพลังที่คุณต้องการใช้ในคืนนี้</p>
-                    <button 
-                      style={{ padding: '16px', background: '#4ade80', color: '#000', borderRadius: '12px', fontWeight: 'bold', fontSize: '20px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(74, 222, 128, 0.3)' }}
-                      onClick={() => setWitchAction('protect')}
-                    >
-                      🧪 ช่วย (ปกป้อง)
-                    </button>
-                    <button 
-                      style={{ padding: '16px', background: '#ff4757', color: '#fff', borderRadius: '12px', fontWeight: 'bold', fontSize: '20px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(255, 71, 87, 0.3)' }}
-                      onClick={() => setWitchAction('attack')}
-                    >
-                      ☠️ ฆ่า (โจมตี)
-                    </button>
-                  </div>
-                ) : showHint ? (
-                  <div style={{ textAlign: 'center', background: 'rgba(0,0,0,0.8)', padding: '32px 16px', borderRadius: '16px', border: '2px solid #D9AE6E' }}>
-                    <h3 style={{ fontSize: '24px', color: '#D9AE6E', marginBottom: '24px' }}>คำใบ้บทบาทของบ้านที่ {showHint.targetId}</h3>
-                    <p style={{ fontSize: '22px', color: '#fff', fontStyle: 'italic', marginBottom: '32px' }}>"{showHint.hint}"</p>
-                    <div style={{ fontSize: '64px', color: '#ff4757', fontWeight: 'bold', textShadow: '0 0 20px rgba(255,71,87,0.5)' }}>{hintCountdown}</div>
-                    <p style={{ color: '#ccc', marginTop: '16px' }}>กำลังปิดอัตโนมัติ...</p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {house.role === 'WITCH' && witchAction && (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <p style={{ color: witchAction === 'protect' ? '#4ade80' : '#ff4757', fontWeight: 'bold', marginBottom: '12px', textAlign: 'center', fontSize: '18px' }}>
-                          {witchAction === 'protect' ? 'คุณเป็นคนดี คุณเลือกที่จะปกป้องบ้านหลังไหน?' : 'ตัวอันตรายมีอยู่ ต้องกำจัด คุณเลือกที่จะกำจัดบ้านหลังไหน?'}
-                        </p>
-                        <button 
-                          style={{ padding: '8px 16px', background: 'transparent', border: '1px solid #ccc', color: '#ccc', borderRadius: '8px', cursor: 'pointer', fontSize: '14px' }}
-                          onClick={() => setWitchAction(null)}
-                        >
-                          ↩ กลับไปเลือกพลังใหม่
-                        </button>
-                      </div>
-                    )}
-                    
-                    {wolfEarned && (
-                      <div style={{ background: 'rgba(255, 215, 0, 0.2)', color: '#FFD700', padding: '24px 16px', borderRadius: '16px', border: '2px solid #FFD700', textAlign: 'center', fontWeight: 'bold', fontSize: '28px', boxShadow: '0 0 20px rgba(255,215,0,0.3)', margin: '16px 0' }}>
-                        You Earn 100 Points! 🐺
-                      </div>
-                    )}
+              <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {house.role === 'WITCH' && witchAction && (
+                  <button 
+                    style={{ padding: '12px 24px', background: 'rgba(0,0,0,0.6)', border: '2px solid #ccc', color: '#ccc', borderRadius: '12px', cursor: 'pointer', fontSize: '18px', marginBottom: '24px', fontWeight: 'bold' }}
+                    onClick={() => setWitchAction(null)}
+                  >
+                    ↩ กลับไปเลือกพลังใหม่
+                  </button>
+                )}
 
-                    {!wolfEarned && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', justifyContent: 'center', marginTop: '8px' }}>
-                        {[1, 2, 3, 4, 5, 6].filter(h => h !== houseId).map(h => (
-                          <button 
-                            key={h}
-                            disabled={actionUsed || house.usedNightSkill}
-                            onClick={() => {
-                              setSelectedTarget(h);
-                              const action = house.role === 'WITCH' ? witchAction! : undefined;
-                              
-                              socket?.emit('useNightSkill', { houseId, targetId: h, action }, (res: any) => {
-                                if (house.role === 'RED_RIDING_HOOD') {
-                                  const targetRole = session.houses[h]?.role;
-                                  const targetHint = targetRole ? roleData[targetRole as keyof typeof roleData]?.hint : 'ไม่ทราบข้อมูล';
-                                  setShowHint({ targetId: h, hint: targetHint || 'ไม่ทราบข้อมูล' });
-                                  setHintCountdown(5);
-                                } else if (house.role === 'WOLF') {
-                                  setWolfEarned(true);
-                                  setTimeout(() => setActionUsed(true), 2500); // Show popup for 2.5s before hiding
-                                } else {
-                                  // For Grandma, Hunter, Witch, wait a bit so they can see the badge before it disappears
-                                  setTimeout(() => setActionUsed(true), 1500);
-                                }
-                              });
-                            }}
-                            style={{
-                              background: '#222',
-                              border: selectedTarget === h 
-                                ? (witchAction === 'protect' || house.role === 'GRANDMA' ? '3px solid #4ade80' : '3px solid #ff4757')
-                                : '2px solid #444',
-                              borderRadius: '12px',
-                              padding: '12px 8px',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              cursor: (actionUsed || house.usedNightSkill) ? 'default' : 'pointer',
-                              transition: 'all 0.2s',
-                              opacity: (actionUsed || house.usedNightSkill) && selectedTarget !== h ? 0.4 : 1,
-                              position: 'relative'
-                            }}
-                          >
-                            <img src={`/houses/${h}.png`} alt={`บ้าน ${h}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: '8px', marginBottom: '8px' }} />
-                            <span style={{ color: '#fff', fontWeight: 'bold', fontSize: '14px' }}>บ้าน {h}</span>
-                            
-                            {/* Feedback Badges */}
-                            {selectedTarget === h && (
-                              <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '28px', filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.8))', zIndex: 10 }}>
-                                {(house.role === 'GRANDMA' || witchAction === 'protect') && '🛡️'}
-                                {(house.role === 'HUNTER' || witchAction === 'attack') && '🏹'}
-                              </div>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                {house.role === 'WOODCUTTER' && house.woodcutterResult && (
+                  <div style={{ background: 'rgba(0,0,0,0.7)', padding: '16px 24px', borderRadius: '16px', color: '#fff', marginBottom: '24px', fontSize: '20px', border: '1px solid #555' }}>
+                    ระบบสุ่มผู้ต้องสงสัยมาให้ 3 หลัง มี 1 หลังเป็น <strong>หมาป่า</strong> แน่นอน 🔍
                   </div>
+                )}
+                
+                {wolfEarned && (
+                  <div style={{ background: 'rgba(255, 215, 0, 0.9)', color: '#000', padding: '24px 40px', borderRadius: '24px', border: '4px solid #B8860B', textAlign: 'center', fontWeight: 'bold', fontSize: '36px', boxShadow: '0 0 40px rgba(255,215,0,0.6)', margin: '16px 0', zIndex: 50, position: 'absolute', top: '50%' }}>
+                    You Earn 100 Points! 🐺
+                  </div>
+                )}
+
+                {/* Village Layout */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '30px', maxWidth: '850px' }}>
+                  {[1, 2, 3, 4, 5, 6].map(h => {
+                    const isOwnHouse = h === houseId;
+                    const isSuspect = house.role === 'WOODCUTTER' && house.woodcutterResult?.includes(h);
+                    const isDimmed = isOwnHouse || (house.role === 'WOODCUTTER' && !isSuspect);
+                    
+                    return (
+                      <button 
+                        key={h}
+                        disabled={actionUsed || house.usedNightSkill || isOwnHouse}
+                        onClick={() => {
+                          if (house.role === 'WOODCUTTER') {
+                            socket?.emit('useNightSkill', { houseId }, () => setActionUsed(true));
+                            return;
+                          }
+
+                          setSelectedTarget(h);
+                          const action = house.role === 'WITCH' ? witchAction! : undefined;
+                          
+                          socket?.emit('useNightSkill', { houseId, targetId: h, action }, (res: any) => {
+                            if (house.role === 'RED_RIDING_HOOD') {
+                              const targetRole = session.houses[h]?.role;
+                              const targetHint = targetRole ? roleData[targetRole as keyof typeof roleData]?.hint : 'ไม่ทราบข้อมูล';
+                              setShowHint({ targetId: h, hint: targetHint || 'ไม่ทราบข้อมูล' });
+                              setHintCountdown(5);
+                            } else if (house.role === 'WOLF') {
+                              setWolfEarned(true);
+                              setTimeout(() => setActionUsed(true), 2500); 
+                            } else {
+                              setTimeout(() => setActionUsed(true), 1500);
+                            }
+                          });
+                        }}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          cursor: (actionUsed || house.usedNightSkill || isOwnHouse) ? 'default' : 'pointer',
+                          transition: 'all 0.2s',
+                          opacity: (actionUsed || house.usedNightSkill) && selectedTarget !== h ? 0.3 : (isDimmed ? 0.4 : 1),
+                          position: 'relative',
+                          transform: selectedTarget === h ? 'scale(1.05)' : 'scale(1)',
+                          width: '240px'
+                        }}
+                      >
+                        <img 
+                          src={`/houses/${h}.png`} 
+                          alt={`บ้าน ${h}`} 
+                          style={{ 
+                            width: '100%', 
+                            height: '180px', 
+                            objectFit: 'contain', 
+                            filter: selectedTarget === h 
+                              ? (witchAction === 'protect' || house.role === 'GRANDMA' ? 'drop-shadow(0 0 20px #4ade80)' : 'drop-shadow(0 0 20px #ff4757)') 
+                              : 'drop-shadow(0 10px 15px rgba(0,0,0,0.5))',
+                            transition: 'filter 0.3s'
+                          }} 
+                        />
+                        
+                        {/* House Label / Wooden Sign */}
+                        <div style={{ 
+                          background: '#8B5A2B', 
+                          color: '#FFE0B2', 
+                          border: '3px solid #4A2B11', 
+                          borderRadius: '8px', 
+                          padding: '6px 20px', 
+                          marginTop: '-15px', 
+                          position: 'relative', 
+                          zIndex: 2,
+                          fontWeight: 'bold',
+                          fontSize: '18px',
+                          boxShadow: '0 4px 8px rgba(0,0,0,0.6)'
+                        }}>
+                          บ้าน {h} {isOwnHouse && '(ของคุณ)'} {isSuspect && '🔍'}
+                        </div>
+                        
+                        {/* Feedback Badges */}
+                        {selectedTarget === h && (
+                          <div style={{ position: 'absolute', top: '-10px', right: '10px', fontSize: '48px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.8))', zIndex: 10, animation: 'bounce 0.5s ease' }}>
+                            {(house.role === 'GRANDMA' || witchAction === 'protect') && '🛡️'}
+                            {(house.role === 'HUNTER' || witchAction === 'attack') && '🏹'}
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {house.role === 'WOODCUTTER' && (
+                  <button 
+                    style={{ marginTop: '40px', padding: '16px 48px', background: '#D9AE6E', color: '#000', borderRadius: '16px', fontWeight: 'bold', fontSize: '24px', cursor: 'pointer', border: 'none', boxShadow: '0 10px 20px rgba(0,0,0,0.5)' }}
+                    onClick={() => socket?.emit('useNightSkill', { houseId }, () => setActionUsed(true))}
+                    disabled={actionUsed || house.usedNightSkill}
+                  >
+                    รับทราบและหลับตา
+                  </button>
                 )}
               </div>
             )}
@@ -401,60 +436,78 @@ const PlayerView: React.FC = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen forest-bg p-4 flex flex-col items-center">
-      <div className="w-full flex justify-between items-center mb-6 px-4">
-        <div style={{
-          background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
-          border: '2px solid rgba(217, 174, 110, 0.5)',
-          padding: '16px 28px',
-          borderRadius: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          minWidth: '180px',
-          boxShadow: '0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(217, 174, 110, 0.15)'
-        }}>
-          <span style={{ 
-            color: '#D9AE6E', 
-            fontFamily: "'Cinzel', serif", 
-            fontWeight: 'bold', 
-            fontSize: '28px',
-            textShadow: '0 0 12px rgba(217, 174, 110, 0.6)',
-            letterSpacing: '0.05em',
-            lineHeight: 1.2
-          }}>
-            บ้านที่ {houseId}
-          </span>
-          <span style={{ color: '#F6E8CD', opacity: 0.9, fontSize: '16px', marginTop: '4px', fontWeight: 'bold', letterSpacing: '0.05em' }}>ผู้เข้าแข่งขัน</span>
-        </div>
+  const isNightMode = session.state === 'NIGHT_MODE';
 
-        <div style={{ 
-          background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
-          border: '2px solid rgba(217, 174, 110, 0.5)',
-          padding: '16px 28px',
-          borderRadius: '16px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          minWidth: '180px',
-          boxShadow: '0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(217, 174, 110, 0.15)'
-        }}>
-          <span style={{ 
-            color: '#D9AE6E', 
-            fontFamily: "'Cinzel', serif", 
-            fontWeight: 'bold', 
-            fontSize: '16px',
-            textShadow: '0 0 12px rgba(217, 174, 110, 0.6)',
-            letterSpacing: '0.1em'
-          }}>SCORE</span>
-          <span style={{ color: '#fff', fontSize: '36px', fontWeight: 'bold', marginTop: '2px', textShadow: '0 4px 8px rgba(0,0,0,0.8)', lineHeight: 1 }}>
-            {house.score}
-          </span>
-        </div>
-      </div>
+  return (
+    <div className="min-h-screen" style={isNightMode ? {
+      backgroundImage: 'url(/village-bg.jpg)',
+      backgroundSize: 'cover',
+      backgroundPosition: 'bottom',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      padding: '16px',
+      position: 'relative'
+    } : {}} >
+      {/* Background layer for non-night mode */}
+      {!isNightMode && <div className="forest-bg" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1 }} />}
       
-      {renderContent()}
+      {!isNightMode && (
+        <div className="w-full flex justify-between items-center mb-6 px-4" style={{ zIndex: 1 }}>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
+            border: '2px solid rgba(217, 174, 110, 0.5)',
+            padding: '16px 28px',
+            borderRadius: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            minWidth: '180px',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(217, 174, 110, 0.15)'
+          }}>
+            <span style={{ 
+              color: '#D9AE6E', 
+              fontFamily: "'Cinzel', serif", 
+              fontWeight: 'bold', 
+              fontSize: '28px',
+              textShadow: '0 0 12px rgba(217, 174, 110, 0.6)',
+              letterSpacing: '0.05em',
+              lineHeight: 1.2
+            }}>
+              บ้านที่ {houseId}
+            </span>
+            <span style={{ color: '#F6E8CD', opacity: 0.9, fontSize: '16px', marginTop: '4px', fontWeight: 'bold', letterSpacing: '0.05em' }}>ผู้เข้าแข่งขัน</span>
+          </div>
+
+          <div style={{ 
+            background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
+            border: '2px solid rgba(217, 174, 110, 0.5)',
+            padding: '16px 28px',
+            borderRadius: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            minWidth: '180px',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(217, 174, 110, 0.15)'
+          }}>
+            <span style={{ 
+              color: '#D9AE6E', 
+              fontFamily: "'Cinzel', serif", 
+              fontWeight: 'bold', 
+              fontSize: '16px',
+              textShadow: '0 0 12px rgba(217, 174, 110, 0.6)',
+              letterSpacing: '0.1em'
+            }}>SCORE</span>
+            <span style={{ color: '#fff', fontSize: '36px', fontWeight: 'bold', marginTop: '2px', textShadow: '0 4px 8px rgba(0,0,0,0.8)', lineHeight: 1 }}>
+              {house.score}
+            </span>
+          </div>
+        </div>
+      )}
+      
+      <div style={{ zIndex: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
+        {renderContent()}
+      </div>
     </div>
   );
 };
