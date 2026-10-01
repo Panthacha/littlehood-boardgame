@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { Map, Sparkles } from 'lucide-react';
 import { CHARACTERS } from '../constants/characters';
@@ -8,12 +8,8 @@ const JoinView: React.FC = () => {
   const { eventSlug } = useParams<{ eventSlug: string }>();
   const navigate = useNavigate();
   const { connected } = useSocket();
-  const [searchParams] = useSearchParams();
   
-  const initialHouse = parseInt(searchParams.get('house') || '0', 10);
-  const [selectedHouse, setSelectedHouse] = useState<number | null>(
-    initialHouse > 0 && initialHouse <= 6 ? initialHouse : null
-  );
+  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
 
   const houses = [1, 2, 3, 4, 5, 6];
 
