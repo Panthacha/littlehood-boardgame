@@ -807,8 +807,11 @@ const HostView: React.FC = () => {
           justifyContent: 'center'
         }}>
           <video 
-            src="/0929(3).mov" 
+            src="/0929(3).mp4" 
             autoPlay 
+            playsInline
+            preload="auto"
+            muted
             onEnded={() => {
               setPlayingIntro(false);
               setActiveTab('QUIZ');
