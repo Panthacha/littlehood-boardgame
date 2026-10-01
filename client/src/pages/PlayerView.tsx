@@ -191,9 +191,27 @@ const PlayerView: React.FC = () => {
   return (
     <div className="min-h-screen forest-bg p-4 flex flex-col items-center">
       <div className="w-full flex justify-between items-center mb-6 px-4">
-        <div className="flex flex-col">
-          <span className="text-gold font-bold text-xl">บ้านที่ {houseId}</span>
-          <span className="text-white opacity-70 text-sm">ผู้เข้าแข่งขัน</span>
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
+          border: '1px solid rgba(217, 174, 110, 0.5)',
+          borderLeft: '4px solid #D9AE6E',
+          padding: '8px 16px',
+          borderRadius: '12px',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.4), inset 0 0 10px rgba(217, 174, 110, 0.1)'
+        }}>
+          <span style={{ 
+            color: '#D9AE6E', 
+            fontFamily: "'Cinzel', serif", 
+            fontWeight: 'bold', 
+            fontSize: '18px',
+            textShadow: '0 0 8px rgba(217, 174, 110, 0.5)',
+            letterSpacing: '0.05em'
+          }}>
+            บ้านที่ {houseId}
+          </span>
+          <span style={{ color: '#F6E8CD', opacity: 0.8, fontSize: '12px', marginTop: '2px' }}>ผู้เข้าแข่งขัน</span>
         </div>
         <div style={{ 
           background: 'rgba(217, 174, 110, 0.15)', 
