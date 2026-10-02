@@ -24,27 +24,21 @@ const Cover: React.FC = () => {
       }}
       tabIndex={0}
     >
-      <div style={{ 
-        position: 'absolute', 
-        top: 0, left: 0, right: 0, bottom: 0, 
-        zIndex: -1, 
-        overflow: 'hidden',
-        pointerEvents: 'none'
-      }}>
-        <iframe
-          src="https://www.youtube.com/embed/vb5Ue65N86o?autoplay=1&mute=1&loop=1&playlist=vb5Ue65N86o&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1"
-          style={{
-            width: '100vw',
-            height: '100vh',
-            pointerEvents: 'none',
-            border: 'none',
-            transform: 'scale(1.3)', // Scale up to hide YouTube UI edges
-            transformOrigin: 'center center'
-          }}
-          allow="autoplay; encrypted-media"
-          title="Intro Background"
-        />
-      </div>
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          width: '100%', height: '100%',
+          objectFit: 'cover',
+          zIndex: -1
+        }}
+      >
+        <source src="/intro.mp4" type="video/mp4" />
+      </video>
 
       {/* Dark gradient overlay to make text pop and add cinematic feel */}
       <div style={{
