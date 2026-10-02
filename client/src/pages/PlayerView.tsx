@@ -310,8 +310,9 @@ const PlayerView: React.FC = () => {
                 )}
                 
                 {wolfEarned && (
-                  <div style={{ background: 'rgba(255, 215, 0, 0.9)', color: '#000', padding: '24px 40px', borderRadius: '24px', border: '4px solid #B8860B', textAlign: 'center', fontWeight: 'bold', fontSize: '36px', boxShadow: '0 0 40px rgba(255,215,0,0.6)', margin: '16px 0', zIndex: 50, position: 'absolute', top: '50%' }}>
-                    You Earn 100 Points! 🐺
+                  <div style={{ background: 'rgba(255, 215, 0, 0.9)', color: '#000', padding: '24px 40px', borderRadius: '24px', border: '4px solid #B8860B', textAlign: 'center', fontWeight: 'bold', fontSize: '36px', boxShadow: '0 0 40px rgba(255,215,0,0.6)', margin: '16px 0', zIndex: 50, position: 'absolute', top: '50%', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <img src="/icons/steal.png" alt="Steal" style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }} />
+                    You Earn 100 Points!
                   </div>
                 )}
 
@@ -399,7 +400,7 @@ const PlayerView: React.FC = () => {
                         
                         {/* Status Badges on the House itself */}
                         <div style={{ position: 'absolute', top: '10px', display: 'flex', gap: '8px', zIndex: 15, fontSize: '32px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.8))' }}>
-                          {isProtected && '🛡️'}
+                          {isProtected && <img src="/icons/protect.png" alt="Protected" style={{ width: '40px', height: '40px' }} />}
                           {isDead ? '☠️' : (injuries === 1 ? '❤️🩹' : '')}
                         </div>
 
@@ -423,9 +424,9 @@ const PlayerView: React.FC = () => {
                         
                         {/* Feedback Badges (Active selection) */}
                         {selectedTarget === h && (
-                          <div style={{ position: 'absolute', top: '-20px', right: '0', fontSize: '64px', filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.9))', zIndex: 20, animation: 'bounce 0.5s ease' }}>
-                            {(house.role === 'GRANDMA' || witchAction === 'protect') && '🛡️'}
-                            {(house.role === 'HUNTER' || witchAction === 'attack') && '🏹'}
+                          <div style={{ position: 'absolute', top: '-20px', right: '0', filter: 'drop-shadow(0 8px 12px rgba(0,0,0,0.9))', zIndex: 20, animation: 'bounce 0.5s ease' }}>
+                            {(house.role === 'GRANDMA' || witchAction === 'protect') && <img src="/icons/protect.png" alt="Protect" style={{ width: '80px', height: '80px' }} />}
+                            {(house.role === 'HUNTER' || witchAction === 'attack') && <img src="/icons/attack.png" alt="Attack" style={{ width: '80px', height: '80px' }} />}
                           </div>
                         )}
                       </button>
