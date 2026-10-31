@@ -21,8 +21,11 @@ export const isHistoryEnabled = () => client !== null;
 export const recordSessionStart = async (sessionId: string, eventSlug: string) => {
   if (!client) return;
   try {
-    await client.from('events').upsert({ event_slug: eventSlug }, { onConflict: 'event_slug' });
-    await client.from('game_sessions').upsert({ id: sessionId, event_slug: eventSlug }, { onConflict: 'id' });
+    const r1 = await client.from('events').upsert({ event_slug: eventSlug }, { onConflict: 'event_slug' });
+    if (r1.error) console.error('[db] events upsert error:', r1.error);
+    const r2 = await client.from('game_sessions').upsert({ id: sessionId, event_slug: eventSlug }, { onConflict: 'id' });
+    if (r2.error) console.error('[db] game_sessions upsert error:', r2.error);
+    else console.log('[db] session start recorded:', sessionId);
   } catch (err) {
     console.error('[db] failed to record session start:', err);
   }
@@ -39,7 +42,9 @@ export const recordSessionResults = async (sessionId: string, houses: Record<num
       role: h.role ?? null,
       is_dead: h.isDead ?? null,
     }));
-    await client.from('house_results').upsert(rows, { onConflict: 'session_id,house_id' });
+    const r = await client.from('house_results').upsert(rows, { onConflict: 'session_id,house_id' });
+    if (r.error) console.error('[db] house_results upsert error:', r.error);
+    else console.log('[db] house results recorded:', sessionId);
   } catch (err) {
     console.error('[db] failed to record session results:', err);
   }
@@ -48,7 +53,8 @@ export const recordSessionResults = async (sessionId: string, houses: Record<num
 export const recordSessionFinished = async (sessionId: string) => {
   if (!client) return;
   try {
-    await client.from('game_sessions').update({ finished_at: new Date().toISOString() }).eq('id', sessionId);
+    const r = await client.from('game_sessions').update({ finished_at: new Date().toISOString() }).eq('id', sessionId);
+    if (r.error) console.error('[db] mark finished error:', r.error);
   } catch (err) {
     console.error('[db] failed to mark session finished:', err);
   }
