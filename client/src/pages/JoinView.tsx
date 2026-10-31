@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
-import { Map, Sparkles } from 'lucide-react';
-import { CHARACTERS } from '../constants/characters';
+import { Map, Sparkles, QrCode } from 'lucide-react';
 
 const JoinView: React.FC = () => {
   const { eventSlug } = useParams<{ eventSlug: string }>();
   const navigate = useNavigate();
   const { connected } = useSocket();
-  
-  const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
+  const [searchParams] = useSearchParams();
+
+  // QR codes printed on the physical cards encode ?house=N — this is the house
+  // that card is FOR, so it must win over any generic picker. Previously this
+  // value was read into the URL but never actually consulted by this page,
+  // which let a scanned card silently end up in the wrong house if someone
+  // tapped a different number on the grid.
+  const houseFromQR = parseInt(searchParams.get('house') || '', 10);
+  const hasValidQRHouse = houseFromQR >= 1 && houseFromQR <= 6;
+
+  const [selectedHouse, setSelectedHouse] = useState<number | null>(hasValidQRHouse ? houseFromQR : null);
+  // Lets someone fall back to the manual picker if their card's QR is wrong/damaged.
+  const [manualOverride, setManualOverride] = useState(false);
 
   const houses = [1, 2, 3, 4, 5, 6];
+  const showPicker = !hasValidQRHouse || manualOverride;
 
   const handleConfirm = () => {
     if (selectedHouse) {
@@ -75,14 +86,31 @@ const JoinView: React.FC = () => {
           <div style={{ color: '#D9AE6E', fontSize: '11px', fontWeight: 'bold', letterSpacing: '0.3em', textTransform: 'uppercase', marginBottom: '12px', opacity: 0.8 }}>
             Event: {eventSlug}
           </div>
-          <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: '32px', color: '#F6E8CD', margin: 0, textShadow: '0 2px 15px rgba(0,0,0,0.8)' }}>
-            เลือกบ้านของคุณ
-          </h2>
-          <p style={{ color: '#BCAF97', fontSize: '15px', margin: '12px 0 0 0', lineHeight: 1.5 }}>
-            ดูหมายเลขบ้านจากการ์ดของคุณ<br/>แล้วเลือกเพื่อยืนยันตัวตน
-          </p>
+          {showPicker ? (
+            <>
+              <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: '32px', color: '#F6E8CD', margin: 0, textShadow: '0 2px 15px rgba(0,0,0,0.8)' }}>
+                เลือกบ้านของคุณ
+              </h2>
+              <p style={{ color: '#BCAF97', fontSize: '15px', margin: '12px 0 0 0', lineHeight: 1.5 }}>
+                ดูหมายเลขบ้านจากการ์ดของคุณ<br/>แล้วเลือกเพื่อยืนยันตัวตน
+              </p>
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#4ade80', fontSize: '13px', fontWeight: 'bold', marginBottom: '8px' }}>
+                <QrCode size={16} /> สแกนจากการ์ดสำเร็จ
+              </div>
+              <h2 style={{ fontFamily: "'Cinzel', serif", fontSize: '32px', color: '#F6E8CD', margin: 0, textShadow: '0 2px 15px rgba(0,0,0,0.8)' }}>
+                คุณคือบ้านที่ {houseFromQR}
+              </h2>
+              <p style={{ color: '#BCAF97', fontSize: '15px', margin: '12px 0 0 0', lineHeight: 1.5 }}>
+                กดยืนยันเพื่อเข้าร่วม
+              </p>
+            </>
+          )}
         </div>
-        
+
+        {showPicker && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', width: '100%', marginTop: '8px' }}>
           {houses.map((id) => {
             const isSelected = selectedHouse === id;
@@ -125,6 +153,7 @@ const JoinView: React.FC = () => {
             )
           })}
         </div>
+        )}
 
         <div style={{ width: '100%', minHeight: '64px', marginTop: '12px', display: 'flex', justifyContent: 'center' }}>
           {selectedHouse ? (
@@ -169,6 +198,23 @@ const JoinView: React.FC = () => {
             </div>
           )}
         </div>
+
+        {!showPicker && (
+          <button
+            onClick={() => { setManualOverride(true); setSelectedHouse(null); }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'rgba(217,174,110,0.6)',
+              fontSize: '13px',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              padding: 0
+            }}
+          >
+            ไม่ใช่บ้านของฉัน / เลือกเอง
+          </button>
+        )}
       </div>
     </div>
   );
