@@ -757,13 +757,11 @@ const HostView: React.FC = () => {
     );
   };
 
-  const handleAuthenticate = async (password: string) => {
-    // In a real app, this should call an API.
-    // For now, we simulate a check.
-    if (password === 'admin1234') {
-      return true;
-    }
-    return false;
+  const handleAuthenticate = (password: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (!socket) return resolve(false);
+      socket.emit('adminLogin', password, (res) => resolve(res.success));
+    });
   };
 
   return (

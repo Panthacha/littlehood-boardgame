@@ -1,17 +1,20 @@
 import { Session, HouseData, Player, GameState } from './types';
 import { questions } from './data';
 
-const DEFAULT_EVENT_SLUG = 'forest-festival';
+export const DEFAULT_EVENT_SLUG = 'LITTLEHOOD'; // matches the slug already baked into the printed QR codes (see generate_qrs.js)
 const TOTAL_QUESTIONS = 5;
 const QUESTION_TIME_LIMIT = 30; // 30 seconds
 
-// We will maintain a single default session for simplicity based on the prompt's scope
-let currentSession: Session = createNewSession();
+// One Session per eventSlug, so multiple classrooms/rounds can run concurrently
+// without clobbering each other. Only DEFAULT_EVENT_SLUG is currently driven by
+// a host UI; other slugs just get an inert LOBBY session if players join them
+// (no host connected to run it yet — host room picking is a future addition).
+const sessions = new Map<string, Session>();
 
-function createNewSession(): Session {
+function createNewSession(eventSlug: string): Session {
   return {
     id: Math.random().toString(36).substring(2, 9),
-    eventSlug: DEFAULT_EVENT_SLUG,
+    eventSlug,
     state: 'LOBBY',
     currentQuestionIndex: -1,
     countdown: 0,
@@ -38,26 +41,35 @@ function createEmptyHouse(id: number): HouseData {
   };
 }
 
-export const getSession = () => currentSession;
-
-export const resetSession = () => {
-  currentSession = createNewSession();
-  return currentSession;
+export const getSession = (eventSlug: string = DEFAULT_EVENT_SLUG): Session => {
+  let session = sessions.get(eventSlug);
+  if (!session) {
+    session = createNewSession(eventSlug);
+    sessions.set(eventSlug, session);
+  }
+  return session;
 };
 
-export const initializeNightMode = () => {
+export const resetSession = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
+  const session = createNewSession(eventSlug);
+  sessions.set(eventSlug, session);
+  return session;
+};
+
+export const initializeNightMode = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
+  const currentSession = getSession(eventSlug);
   currentSession.state = 'NIGHT_MODE';
   currentSession.awakeHouseId = null;
-  
+
   const roles: import('./types').Role[] = [
-    'RED_RIDING_HOOD', 
-    'GRANDMA', 
-    'WOLF', 
-    'HUNTER', 
-    'WOODCUTTER', 
+    'RED_RIDING_HOOD',
+    'GRANDMA',
+    'WOLF',
+    'HUNTER',
+    'WOODCUTTER',
     'WITCH'
   ];
-  
+
   // Shuffle roles
   for (let i = roles.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -66,12 +78,12 @@ export const initializeNightMode = () => {
 
   // Find wolf house ID for woodcutter
   let wolfHouseId = 1;
-  
+
   // Assign roles
   for (let i = 1; i <= 6; i++) {
     const role = roles[i - 1];
     if (role === 'WOLF') wolfHouseId = i;
-    
+
     currentSession.houses[i] = {
       ...currentSession.houses[i],
       role: role,
@@ -82,7 +94,7 @@ export const initializeNightMode = () => {
       woodcutterResult: undefined
     };
   }
-  
+
   // Setup woodcutter result (3 random houses including the wolf)
   const otherHouses = [1,2,3,4,5,6].filter(id => id !== wolfHouseId);
   // shuffle other houses
@@ -93,7 +105,7 @@ export const initializeNightMode = () => {
   const woodcutterResult = [wolfHouseId, otherHouses[0], otherHouses[1]];
   // sort to hide which one is wolf
   woodcutterResult.sort((a, b) => a - b);
-  
+
   for (let i = 1; i <= 6; i++) {
     if (currentSession.houses[i].role === 'WOODCUTTER') {
       currentSession.houses[i].woodcutterResult = woodcutterResult;
@@ -101,8 +113,9 @@ export const initializeNightMode = () => {
   }
 };
 
-export const joinHouse = (socketId: string, houseId: number): HouseData | null => {
+export const joinHouse = (eventSlug: string, socketId: string, houseId: number): HouseData | null => {
   if (houseId < 1 || houseId > 6) return null;
+  const currentSession = getSession(eventSlug);
   const house = currentSession.houses[houseId];
   if (!house) return null;
 
@@ -113,34 +126,45 @@ export const joinHouse = (socketId: string, houseId: number): HouseData | null =
   } else {
     existingPlayer.isOnline = true;
   }
-  updateHouseOnlineStatus(houseId);
+  updateHouseOnlineStatus(currentSession, houseId);
   return house;
 };
 
-export const leaveHouse = (socketId: string) => {
-  for (let id = 1; id <= 6; id++) {
-    const house = currentSession.houses[id];
-    const player = house.players.find(p => p.socketId === socketId);
-    if (player) {
-      player.isOnline = false;
-      updateHouseOnlineStatus(id);
+// Searches every room (we don't know which eventSlug a disconnecting socket
+// belonged to) and returns the slugs that actually changed, so the caller can
+// broadcast updates only to those rooms.
+export const leaveHouse = (socketId: string): string[] => {
+  const affectedSlugs: string[] = [];
+  for (const session of sessions.values()) {
+    let changed = false;
+    for (let id = 1; id <= 6; id++) {
+      const house = session.houses[id];
+      const player = house.players.find(p => p.socketId === socketId);
+      if (player) {
+        player.isOnline = false;
+        updateHouseOnlineStatus(session, id);
+        changed = true;
+      }
     }
+    if (changed) affectedSlugs.push(session.eventSlug);
   }
+  return affectedSlugs;
 };
 
-const updateHouseOnlineStatus = (houseId: number) => {
-  const house = currentSession.houses[houseId];
+const updateHouseOnlineStatus = (session: Session, houseId: number) => {
+  const house = session.houses[houseId];
   if (house) {
-    // Keep the house active (lit up) if anyone has ever joined it, 
+    // Keep the house active (lit up) if anyone has ever joined it,
     // because mobile browsers often disconnect sockets when the screen turns off.
     house.isOnline = house.players.length > 0;
   }
 };
 
-export const submitAnswer = (houseId: number, key: string) => {
+export const submitAnswer = (eventSlug: string, houseId: number, key: string) => {
+  const currentSession = getSession(eventSlug);
   const house = currentSession.houses[houseId];
   if (!house) return false;
-  
+
   if (currentSession.state !== 'QUESTION_OPEN') return false;
   if (house.hasSubmitted) return false; // Atomic lock, first answer counts
 
@@ -149,9 +173,10 @@ export const submitAnswer = (houseId: number, key: string) => {
   return true;
 };
 
-export const processNightSkill = (houseId: number, targetId?: number, action?: string) => {
+export const processNightSkill = (eventSlug: string, houseId: number, targetId?: number, action?: string) => {
+  const currentSession = getSession(eventSlug);
   if (currentSession.state !== 'NIGHT_MODE') return false;
-  
+
   const house = currentSession.houses[houseId];
   if (!house || house.usedNightSkill) return false;
 
@@ -205,7 +230,8 @@ export const processNightSkill = (houseId: number, targetId?: number, action?: s
   return success;
 };
 
-export const calculateScores = () => {
+export const calculateScores = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
+  const currentSession = getSession(eventSlug);
   const question = questions[currentSession.currentQuestionIndex];
   if (!question) return {};
 
@@ -226,7 +252,7 @@ export const calculateScores = () => {
       if (bonus < 0) bonus = 0;
       if (bonus > 30) bonus = 30;
       scoreDelta = 100 + bonus;
-      
+
       house.score += scoreDelta;
       house.correctAnswers += 1;
     }
@@ -237,14 +263,15 @@ export const calculateScores = () => {
   return results;
 };
 
-export const setGameState = (state: GameState) => {
-  currentSession.state = state;
+export const setGameState = (eventSlug: string, state: GameState) => {
+  getSession(eventSlug).state = state;
 };
 
-export const startCountdown = (onTick: (count: number) => void, onComplete: () => void) => {
+export const startCountdown = (eventSlug: string, onTick: (count: number) => void, onComplete: () => void) => {
+  const currentSession = getSession(eventSlug);
   currentSession.countdown = 3;
-  setGameState('COUNTDOWN');
-  
+  setGameState(eventSlug, 'COUNTDOWN');
+
   const interval = setInterval(() => {
     currentSession.countdown -= 1;
     onTick(currentSession.countdown);
@@ -255,11 +282,12 @@ export const startCountdown = (onTick: (count: number) => void, onComplete: () =
   }, 1000);
 };
 
-export const startQuestionTimer = (onTick: (time: number) => void, onComplete: () => void) => {
+export const startQuestionTimer = (eventSlug: string, onTick: (time: number) => void, onComplete: () => void) => {
+  const currentSession = getSession(eventSlug);
   currentSession.timeRemaining = QUESTION_TIME_LIMIT;
   currentSession.startTime = Date.now();
-  setGameState('QUESTION_OPEN');
-  
+  setGameState(eventSlug, 'QUESTION_OPEN');
+
   // Clear submitted state for all houses
   for (let id = 1; id <= 6; id++) {
     currentSession.houses[id].hasSubmitted = false;
@@ -274,7 +302,7 @@ export const startQuestionTimer = (onTick: (time: number) => void, onComplete: (
 
     const elapsed = (Date.now() - currentSession.startTime!) / 1000;
     currentSession.timeRemaining = Math.max(0, Math.ceil(QUESTION_TIME_LIMIT - elapsed));
-    
+
     onTick(currentSession.timeRemaining);
 
     // Check if all online houses submitted
@@ -288,14 +316,15 @@ export const startQuestionTimer = (onTick: (time: number) => void, onComplete: (
 
     if (currentSession.timeRemaining <= 0 || allSubmitted) {
       clearInterval(interval);
-      setGameState('QUESTION_CLOSED');
+      setGameState(eventSlug, 'QUESTION_CLOSED');
       currentSession.timeRemaining = 0;
       onComplete();
     }
   }, 1000);
 };
 
-export const nextQuestion = () => {
+export const nextQuestion = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
+  const currentSession = getSession(eventSlug);
   currentSession.currentQuestionIndex += 1;
   return currentSession.currentQuestionIndex;
 };

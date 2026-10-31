@@ -65,6 +65,7 @@ export interface ClientToServerEvents {
   hostStartNightMode: () => void;
   hostWakeUpHouse: (houseId: number | null) => void;
   useNightSkill: (data: { houseId: number; targetId?: number; action?: string }, callback: (res: any) => void) => void;
+  adminLogin: (password: string, callback: (res: { success: boolean }) => void) => void;
 }
 
 // Server to Client Events
