@@ -8,16 +8,17 @@ interface ClassifyItem {
   id: string;
   label: string;
   isGame: boolean;
-  monogram: string;
 }
 
+// Pictures: /part1/<id>.jpg, cut from the six framed panels in
+// "เกมและของเล่นในกรอบทอง six panels.png".
 const CLASSIFY_ITEMS: ClassifyItem[] = [
-  { id: 'chess', label: 'หมากรุก', isGame: true, monogram: 'หม' },
-  { id: 'uno', label: 'ไพ่อูโน', isGame: true, monogram: 'ไพ' },
-  { id: 'dice', label: 'ลูกเต๋า', isGame: true, monogram: 'ลู' },
-  { id: 'remote', label: 'รีโมททีวี', isGame: false, monogram: 'รี' },
-  { id: 'book', label: 'หนังสือเรียน', isGame: false, monogram: 'นส' },
-  { id: 'phone', label: 'โทรศัพท์มือถือ', isGame: false, monogram: 'โท' }
+  { id: 'chess', label: 'หมากรุก', isGame: true },
+  { id: 'uno', label: 'ไพ่อูโน', isGame: true },
+  { id: 'dice', label: 'ลูกเต๋า', isGame: true },
+  { id: 'remote', label: 'รีโมททีวี', isGame: false },
+  { id: 'book', label: 'หนังสือเรียน', isGame: false },
+  { id: 'phone', label: 'โทรศัพท์มือถือ', isGame: false }
 ];
 
 const PIECE_ITEMS = [
@@ -136,7 +137,7 @@ const Part1: React.FC<Props> = ({ houseId }) => {
         <Section title="สิ่งไหนคือบอร์ดเกม?">
           <Note>แตะ "ใช่" หรือ "ไม่ใช่" ให้ครบทุกชิ้น</Note>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-            {CLASSIFY_ITEMS.map((item, i) => {
+            {CLASSIFY_ITEMS.map((item) => {
               const answered = data.classifyAnswers[item.id] !== undefined;
               const correct = answered ? data.classifyAnswers[item.id] === item.isGame : null;
               return (
@@ -145,7 +146,7 @@ const Part1: React.FC<Props> = ({ houseId }) => {
                   background: answered ? (correct ? 'rgba(47,107,58,0.12)' : 'rgba(168,35,58,0.1)') : 'rgba(255,250,238,0.5)',
                   border: `2px solid ${answered ? (correct ? 'rgba(47,107,58,0.55)' : 'rgba(168,35,58,0.45)') : 'rgba(122,85,48,0.3)'}`
                 }}>
-                  <div style={tile(COLORS[i % COLORS.length])}>{item.monogram}</div>
+                  <img src={`/part1/${item.id}.jpg`} alt={item.label} style={{ width: '100%', maxWidth: '170px', aspectRatio: '522 / 470', objectFit: 'cover', borderRadius: '10px', boxShadow: '0 4px 10px rgba(60,30,10,0.35)' }} />
                   <div style={{ fontSize: '15px', fontWeight: 'bold' }}>{item.label}</div>
                   {!answered ? (
                     <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
