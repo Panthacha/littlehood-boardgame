@@ -20,15 +20,17 @@ const CLASSIFY_ITEMS: ClassifyItem[] = [
   { id: 'phone', label: 'โทรศัพท์มือถือ', isGame: false }
 ];
 
+// Matching step: picture on the left (/part1/piece-<id>.webp, close-ups cut
+// from the "six panels" artwork), word on the right.
 const PIECE_ITEMS = [
-  { id: 'board', label: 'กระดาน', monogram: 'กด' },
-  { id: 'card', label: 'การ์ด', monogram: 'กต' },
-  { id: 'dice', label: 'เต๋า', monogram: 'ตว' },
-  { id: 'pawn', label: 'ตัวเดิน', monogram: 'ตด' }
+  { id: 'board', label: 'กระดาน' },
+  { id: 'card', label: 'การ์ด' },
+  { id: 'dice', label: 'เต๋า' },
+  { id: 'pawn', label: 'ตัวเดิน' }
 ];
+const MATCH_ROW_H = 92;
 
 const LABEL_ORDER = ['dice', 'pawn', 'board', 'card'];
-const COLORS = ['#2F5A2A', '#8A5A1E', '#8E1B2C'];
 
 interface Part1Data {
   classifyAnswers: Record<string, boolean>;
@@ -122,12 +124,6 @@ const Part1: React.FC<Props> = ({ houseId }) => {
     }
   };
 
-  const tile = (bg: string, size = 48): React.CSSProperties => ({
-    width: size, height: size, borderRadius: 10, background: bg, color: '#F6E8CD', flexShrink: 0,
-    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: size > 40 ? 15 : 12,
-    boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.25)'
-  });
-
   return (
     <PartShell part={1} title="ห้องแล็บบอร์ดเกม" step={step} totalSteps={4} canAdvance={canAdvance}
       nextLabel={step === 2 ? 'เสร็จสิ้นพาร์ท 1' : 'ถัดไป'} onBack={() => goStep(step - 1)} onNext={() => goStep(step + 1)}>
@@ -169,24 +165,32 @@ const Part1: React.FC<Props> = ({ houseId }) => {
       )}
 
       {step === 1 && (
-        <Section title="จับคู่ชิ้นส่วนเกม">
-          <Note>แตะชิ้นส่วนทางซ้าย แล้วแตะชื่อที่ตรงกันทางขวา</Note>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {PIECE_ITEMS.map((p, i) => {
+        <Section title="จับคู่ภาพกับชื่อ">
+          <Note>แตะภาพทางซ้าย แล้วแตะชื่อที่ตรงกันทางขวา</Note>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px 14px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {PIECE_ITEMS.map((p) => {
                 const matched = !!data.matches[p.id];
                 const isSelected = selectedPiece === p.id;
                 return (
                   <button key={p.id} onClick={() => handleSelectPiece(p.id)} disabled={matched} aria-pressed={isSelected}
-                    className={`lh-strip ${matched ? 'is-right' : isSelected ? 'is-on' : ''}`}
-                    style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '6px 10px', opacity: 1, filter: 'none', boxShadow: matched ? 'none' : undefined }}>
-                    <span style={tile(COLORS[i % COLORS.length], 32)}>{p.monogram}</span>
-                    <span>{p.label}</span>
+                    aria-label={matched ? `ภาพ${p.label} (จับคู่แล้ว)` : 'ภาพชิ้นส่วนเกม'}
+                    className={isSelected ? 'lh-pop' : ''}
+                    style={{
+                      position: 'relative', height: `${MATCH_ROW_H}px`, padding: 0, borderRadius: '12px', overflow: 'hidden', cursor: matched ? 'default' : 'pointer',
+                      border: `3px solid ${matched ? '#B8892A' : isSelected ? 'var(--lh-hood)' : 'rgba(122,85,48,0.35)'}`,
+                      boxShadow: matched ? '0 0 14px rgba(255,200,80,0.6)' : isSelected ? '0 0 0 3px rgba(168,35,58,0.25)' : '0 3px 0 rgba(90,55,25,0.3)',
+                      opacity: 1, filter: 'none', background: '#2B1D12'
+                    }}>
+                    <img src={`/part1/piece-${p.id}.webp`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: p.id === 'pawn' ? 'center 20%' : 'center', display: 'block' }} />
+                    {matched && (
+                      <span className="lh-stamp" style={{ position: 'absolute', right: '6px', bottom: '6px', padding: '2px 8px', borderRadius: '8px', background: 'rgba(243,231,203,0.95)', color: '#2F6B3A', fontWeight: 700, fontSize: '13px' }}>✓ {p.label}</span>
+                    )}
                   </button>
                 );
               })}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {LABEL_ORDER.map((id) => {
                 const piece = PIECE_ITEMS.find((p) => p.id === id)!;
                 const matchedByPieceId = Object.keys(data.matches).find((pid) => data.matches[pid] === id);
@@ -194,13 +198,14 @@ const Part1: React.FC<Props> = ({ houseId }) => {
                 return (
                   <button key={id} onClick={() => handlePickLabel(id)} disabled={!!matchedByPieceId}
                     className={`lh-strip ${matchedByPieceId ? 'is-right' : isWrong ? 'is-wrong' : ''}`}
-                    style={{ opacity: 1, filter: 'none', boxShadow: matchedByPieceId ? 'none' : undefined }}>
+                    style={{ height: `${MATCH_ROW_H}px`, textAlign: 'center', fontSize: '18px', fontFamily: 'var(--lh-display)', fontWeight: 400, opacity: 1, filter: 'none', boxShadow: matchedByPieceId ? 'none' : undefined }}>
                     {piece.label}{matchedByPieceId ? ' ✓' : ''}
                   </button>
                 );
               })}
             </div>
           </div>
+          {selectedPiece && <p className="lh-breathe" style={{ margin: 0, textAlign: 'center', fontSize: '14px', fontWeight: 700, color: 'var(--lh-hood)' }}>เลือกภาพแล้ว — แตะชื่อที่ตรงกันทางขวา</p>}
         </Section>
       )}
 
