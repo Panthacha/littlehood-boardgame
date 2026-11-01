@@ -29,3 +29,22 @@ create table if not exists house_results (
 
 create index if not exists idx_game_sessions_event_slug on game_sessions(event_slug);
 create index if not exists idx_house_results_session_id on house_results(session_id);
+
+-- Curriculum Parts 1-5 (board-game-design stepper flow). Unlike the tables
+-- above, this one IS read during an active round: each house's own stepper
+-- progress and form answers (team game idea, character design, mechanics,
+-- blueprint, playtest results) are saved here as they go, so a refresh
+-- doesn't lose progress and later parts (4-5) can read earlier parts' data.
+create table if not exists part_progress (
+  id bigint generated always as identity primary key,
+  session_id text not null references game_sessions(id),
+  house_id integer not null,
+  part_number integer not null check (part_number between 1 and 5),
+  current_step integer not null default 0,
+  data jsonb not null default '{}',
+  completed_at timestamptz,
+  updated_at timestamptz not null default now(),
+  unique (session_id, house_id, part_number)
+);
+
+create index if not exists idx_part_progress_session_house on part_progress(session_id, house_id);

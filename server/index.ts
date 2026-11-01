@@ -20,7 +20,7 @@ import {
   processNightSkill
 } from './gameState';
 import { questions } from './data';
-import { recordSessionStart, recordSessionResults, recordSessionFinished } from './db';
+import { recordSessionStart, recordSessionResults, recordSessionFinished, savePartProgress, getPartProgress } from './db';
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin1234';
 if (!process.env.ADMIN_PASSWORD) {
@@ -122,17 +122,28 @@ io.on('connection', (socket) => {
     startRound();
   });
 
-  socket.on('hostStartPostVideo', () => {
-    if (getSession().state !== 'MID_SCOREBOARD') return;
-    setGameState(DEFAULT_EVENT_SLUG, 'POST_VIDEO');
+  // Sequence: MID_SCOREBOARD -> Part 1 -> night 1 -> Part 2 -> night 2 -> ...
+  // -> Part 5 -> night 5 -> FINISHED. A NIGHT_MODE round always follows the
+  // Part it's attached to (session.lastCompletedPart), never a standalone
+  // bonus — see gameState.ts's initializeNightMode for why roles/injuries
+  // persist across the 5 rounds instead of resetting each time.
+  socket.on('hostStartPart', (part: number) => {
+    if (part < 1 || part > 5) return;
+    const session = getSession();
+    if (part === 1) {
+      if (session.state !== 'MID_SCOREBOARD') return;
+    } else {
+      if (session.state !== 'NIGHT_MODE' || session.lastCompletedPart !== part - 1) return;
+    }
+    setGameState(DEFAULT_EVENT_SLUG, `PART_${part}` as any);
     io.to(DEFAULT_EVENT_SLUG).emit('gameStateUpdate', getSession());
   });
 
-  socket.on('hostStartPostTest', () => {
-    if (getSession().state !== 'POST_VIDEO') return;
-    // Move to question index 5 (6th question)
-    nextQuestion(); // this increments index from 4 to 5
-    startRound();
+  socket.on('hostFinishParts', () => {
+    const session = getSession();
+    if (session.state !== 'NIGHT_MODE' || session.lastCompletedPart !== 5) return;
+    setGameState(DEFAULT_EVENT_SLUG, 'FINISHED');
+    io.to(DEFAULT_EVENT_SLUG).emit('gameStateUpdate', getSession());
   });
 
   socket.on('hostReveal', () => {
@@ -172,7 +183,10 @@ io.on('connection', (socket) => {
   });
 
   socket.on('hostStartNightMode', () => {
-    if (getSession().state !== 'FINISHED') return;
+    const session = getSession();
+    const match = session.state.match(/^PART_(\d)$/);
+    if (!match) return;
+    session.lastCompletedPart = parseInt(match[1], 10);
     initializeNightMode();
     io.to(DEFAULT_EVENT_SLUG).emit('gameStateUpdate', getSession());
   });
@@ -194,6 +208,20 @@ io.on('connection', (socket) => {
 
   socket.on('adminLogin', (password, callback) => {
     callback({ success: password === ADMIN_PASSWORD });
+  });
+
+  socket.on('savePartProgress', async ({ houseId, partNumber, step, data, completed }, callback) => {
+    const slug = socketEventSlug.get(socket.id) || DEFAULT_EVENT_SLUG;
+    const session = getSession(slug);
+    const ok = await savePartProgress(session.id, slug, houseId, partNumber, step, data, !!completed);
+    callback({ success: ok });
+  });
+
+  socket.on('getPartProgress', async ({ houseId }, callback) => {
+    const slug = socketEventSlug.get(socket.id) || DEFAULT_EVENT_SLUG;
+    const session = getSession(slug);
+    const parts = await getPartProgress(session.id, houseId);
+    callback({ parts });
   });
 
   socket.on('disconnect', () => {

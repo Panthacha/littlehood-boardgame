@@ -59,19 +59,11 @@ const AdminView: React.FC = () => {
           </div>
           
           <div className="admin-card-content">
-            {session?.state === 'FINISHED' ? (
-               <button 
-                 style={{ padding: '16px', background: '#D9AE6E', color: '#1a1a1a', borderRadius: '12px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', border: 'none' }}
-                 onClick={() => {
-                   if (window.confirm('เข้าสู่โหมดกลางคืน? ระบบจะสุ่มบทบาทให้แต่ละบ้านทันที')) {
-                     socket?.emit('hostStartNightMode');
-                   }
-                 }}
-               >
-                 เข้าสู่โหมดกลางคืน (เริ่มเล่นแวร์วูฟ)
-               </button>
-            ) : session?.state === 'NIGHT_MODE' ? (
+            {session?.state === 'NIGHT_MODE' ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', width: '100%' }}>
+                <div style={{ gridColumn: '1 / -1', marginBottom: '16px', fontSize: '18px', fontWeight: 'bold', color: '#D9AE6E' }}>
+                  คืนที่ {session.lastCompletedPart || 1} (หลังจบ Part {session.lastCompletedPart || 1})
+                </div>
                 <div style={{ gridColumn: '1 / -1', marginBottom: '16px' }}>
                   <button 
                     style={{ padding: '12px 24px', background: '#333', color: '#fff', borderRadius: '8px', cursor: 'pointer', border: '1px solid #555' }}
@@ -113,10 +105,22 @@ const AdminView: React.FC = () => {
                     </div>
                   );
                 })}
+                <div style={{ gridColumn: '1 / -1', marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
+                  <button
+                    onClick={() => {
+                      const done = session.lastCompletedPart || 1;
+                      if (done === 5) socket?.emit('hostFinishParts');
+                      else socket?.emit('hostStartPart', done + 1);
+                    }}
+                    style={{ padding: '14px 32px', background: '#D9AE6E', color: '#1a1a1a', borderRadius: '12px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', border: 'none' }}
+                  >
+                    {(session.lastCompletedPart || 1) === 5 ? 'จบคืนสุดท้าย ดูผลสรุป 🏆' : `จบคืนนี้ → ไป Part ${(session.lastCompletedPart || 1) + 1}`}
+                  </button>
+                </div>
               </div>
             ) : (
               <p className="admin-status-text">
-                * โหมดนี้จะเปิดให้ใช้งานได้เมื่อเล่นคำถาม Post-test จบแล้ว (สถานะ FINISHED)
+                * โหมดกลางคืนจะเปิดอัตโนมัติหลังจบแต่ละ Part (กดปุ่ม "เข้าสู่คืนที่ N" บนจอใหญ่)
               </p>
             )}
           </div>

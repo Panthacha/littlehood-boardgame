@@ -1,4 +1,4 @@
-export type GameState = 'LOBBY' | 'COUNTDOWN' | 'QUESTION_OPEN' | 'QUESTION_CLOSED' | 'REVEAL' | 'MID_SCOREBOARD' | 'POST_VIDEO' | 'FINISHED' | 'NIGHT_MODE';
+export type GameState = 'LOBBY' | 'COUNTDOWN' | 'QUESTION_OPEN' | 'QUESTION_CLOSED' | 'REVEAL' | 'MID_SCOREBOARD' | 'PART_1' | 'PART_2' | 'PART_3' | 'PART_4' | 'PART_5' | 'FINISHED' | 'NIGHT_MODE';
 
 export type Role = 'RED_RIDING_HOOD' | 'GRANDMA' | 'WOLF' | 'HUNTER' | 'WOODCUTTER' | 'WITCH';
 
@@ -49,6 +49,7 @@ export interface Session {
   houses: Record<number, HouseData>;
   startTime?: number; // timestamp when question started
   awakeHouseId?: number | null; // house currently awake in NIGHT_MODE
+  lastCompletedPart?: number; // which Part (1-5) the current/last NIGHT_MODE round follows
 }
 
 // Client to Server Events
@@ -62,12 +63,14 @@ export interface ClientToServerEvents {
   hostReveal: () => void;
   hostShowSummary: () => void;
   hostNewRound: () => void;
-  hostStartPostVideo: () => void;
-  hostStartPostTest: () => void;
+  hostStartPart: (part: number) => void;
+  hostFinishParts: () => void;
   hostStartNightMode: () => void;
   hostWakeUpHouse: (houseId: number | null) => void;
   useNightSkill: (data: { houseId: number; targetId?: number; action?: string }, callback: (res: any) => void) => void;
   adminLogin: (password: string, callback: (res: { success: boolean }) => void) => void;
+  savePartProgress: (data: { houseId: number; partNumber: number; step: number; data: Record<string, any>; completed?: boolean }, callback: (res: any) => void) => void;
+  getPartProgress: (data: { houseId: number }, callback: (res: { parts: Record<number, { step: number; data: Record<string, any>; completedAt: string | null }> }) => void) => void;
 }
 
 // Server to Client Events

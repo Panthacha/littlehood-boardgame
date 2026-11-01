@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
+import Part1 from './parts/Part1';
 
 const roleData = {
   RED_RIDING_HOOD: { name: 'หนูน้อยหมวกแดง', hint: 'ฉันได้รับมอบหมายให้นำบางสิ่งไปยังปลายทาง แต่ระหว่างทางกลับพบทางเลือกที่ไม่ควรเลือก', skillName: 'ตรวจสอบคำใบ้บทบาท', icon: <Search /> },
@@ -51,6 +52,19 @@ const PlayerView: React.FC = () => {
       socket.off('countdownUpdate', onCountdown);
     };
   }, [socket, connected, sessionId, houseId]);
+
+  // Night Mode now repeats after every Part — clear last round's local UI state
+  // so the house can act again in the new round.
+  const nightRound = session?.state === 'NIGHT_MODE' ? session.lastCompletedPart : undefined;
+  useEffect(() => {
+    if (nightRound === undefined) return;
+    setWitchAction(null);
+    setShowHint(null);
+    setHintCountdown(0);
+    setWolfEarned(false);
+    setActionUsed(false);
+    setSelectedTarget(null);
+  }, [nightRound]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -213,11 +227,21 @@ const PlayerView: React.FC = () => {
           </div>
         );
 
-      case 'POST_VIDEO':
+      case 'PART_1':
+        return (
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <Part1 houseId={houseId} />
+          </div>
+        );
+
+      case 'PART_2':
+      case 'PART_3':
+      case 'PART_4':
+      case 'PART_5':
         return (
           <div style={cardStyle}>
-            <h2 style={{ fontSize: '28px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '16px' }}>ช่วงคลิปบทเรียน 🎬</h2>
-            <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '24px' }}>กรุณาตั้งใจดูและฟังคลิปบทเรียนบนจอใหญ่นะครับ เดี๋ยวเราจะมีแบบทดสอบ Post-test ท้ายบทเรียน!</p>
+            <h2 style={{ fontSize: '28px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '16px' }}>Part {session.state.replace('PART_', '')}</h2>
+            <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '24px' }}>กำลังพัฒนาหน้านี้อยู่ รอก่อนนะครับ 🚧</p>
           </div>
         );
 
@@ -454,7 +478,7 @@ const PlayerView: React.FC = () => {
             <h2 style={{ fontSize: '32px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '24px' }}>ภารกิจเสร็จสิ้น!</h2>
             <div style={{ padding: '24px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', marginBottom: '24px' }}>
               <div style={{ fontSize: '20px', marginBottom: '12px' }}>คะแนนรวมทั้งหมด: <strong style={{color: '#fff', fontSize: '28px'}}>{house.score}</strong></div>
-              <div style={{ fontSize: '18px' }}>ตอบถูกรวม: <strong style={{color: '#4ade80'}}>{house.correctAnswers} / 10</strong> ข้อ</div>
+              <div style={{ fontSize: '18px' }}>ตอบถูกรวม: <strong style={{color: '#4ade80'}}>{house.correctAnswers} / 5</strong> ข้อ</div>
             </div>
             <p style={{ fontSize: '16px', opacity: 0.8 }}>ขอบคุณที่ร่วมออกเดินทาง<br/>รอผู้สอนประกาศผลบนจอใหญ่</p>
           </div>

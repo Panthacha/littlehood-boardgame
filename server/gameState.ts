@@ -56,6 +56,14 @@ export const resetSession = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
   return session;
 };
 
+// Night Mode now runs once after EVERY Part (5 rounds total across one
+// session), not just once at the end — matching Claude.pdf's "one night per
+// chapter" design. Role stays fixed per house across all 5 rounds (same
+// deterministic mapping every call); isProtected/usedNightSkill/
+// woodcutterResult reset each round so everyone gets a fresh action, but
+// score/injuries/isDead carry over and accumulate round to round. Whether
+// this is round 1 or round 5 for a house is detected by whether it already
+// has a role assigned (role is only ever set by this function).
 export const initializeNightMode = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
   const currentSession = getSession(eventSlug);
   currentSession.state = 'NIGHT_MODE';
@@ -83,18 +91,24 @@ export const initializeNightMode = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
     const role = roles[i - 1];
     if (role === 'WOLF') wolfHouseId = i;
 
+    const house = currentSession.houses[i];
+    const isFirstRound = house.role === undefined;
+
     currentSession.houses[i] = {
-      ...currentSession.houses[i],
-      role: role,
+      ...house,
+      role,
       isProtected: false,
-      injuries: 0,
-      isDead: false,
       usedNightSkill: false,
-      woodcutterResult: undefined
+      woodcutterResult: undefined,
+      // Only reset these on the very first round for this house — later
+      // rounds keep accumulating injuries/isDead/score.
+      injuries: isFirstRound ? 0 : house.injuries,
+      isDead: isFirstRound ? false : house.isDead
     };
   }
 
-  // Setup woodcutter result (3 random houses including the wolf)
+  // Setup woodcutter result (3 random houses including the wolf) — reshuffled
+  // fresh every round so the suspects aren't identical night after night.
   const otherHouses = [1,2,3,4,5,6].filter(id => id !== wolfHouseId);
   // shuffle other houses
   for (let i = otherHouses.length - 1; i > 0; i--) {
@@ -177,7 +191,7 @@ export const processNightSkill = (eventSlug: string, houseId: number, targetId?:
   if (currentSession.state !== 'NIGHT_MODE') return false;
 
   const house = currentSession.houses[houseId];
-  if (!house || house.usedNightSkill) return false;
+  if (!house || house.usedNightSkill || house.isDead) return false;
 
   const role = house.role;
   let success = false;

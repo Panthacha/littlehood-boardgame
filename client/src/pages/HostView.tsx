@@ -7,6 +7,14 @@ import type { Question } from '../types';
 import { getCharacter } from '../constants/characters';
 import YouTube from 'react-youtube';
 
+const PART_TITLES: Record<number, string> = {
+  1: 'ห้องแล็บบอร์ดเกม',
+  2: 'ห้องเขียนเรื่อง',
+  3: 'ห้องออกแบบกติกา',
+  4: 'ห้องประกอบต้นแบบ',
+  5: 'ห้องทดสอบและเล่าเรื่อง'
+};
+
 const HostView: React.FC = () => {
   const { socket, session, connected } = useSocket();
   const [activeTab, setActiveTab] = useState<'LOBBY' | 'QUIZ'>('LOBBY');
@@ -347,14 +355,14 @@ const HostView: React.FC = () => {
                     อันดับ {i + 1} - บ้านที่ {h.houseId} {i === 0 && '👑'}
                   </div>
                   <div style={{ fontSize: '20px', color: i === 0 ? '#fff' : 'rgba(255,255,255,0.8)' }}>
-                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/10)
+                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/5)
                   </div>
                 </div>
               ))}
             </div>
             <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center' }}>
-              <button 
-                onClick={() => socket?.emit('hostStartPostVideo')}
+              <button
+                onClick={() => socket?.emit('hostStartPart', 1)}
                 style={{
                   background: 'linear-gradient(135deg, #D9AE6E, #B88645)',
                   color: '#1a1a1a',
@@ -368,50 +376,57 @@ const HostView: React.FC = () => {
                   boxShadow: '0 8px 25px rgba(217, 174, 110, 0.6)'
                 }}
               >
-                ดูคลิปบทเรียน (เข้าสู่ Post-test) ➡️
+                เริ่ม Part 1: {PART_TITLES[1]} ➡️
               </button>
             </div>
           </div>
        );
     }
 
-    if (session.state === 'POST_VIDEO') {
+    if (session.state.startsWith('PART_')) {
+      const partNum = parseInt(session.state.replace('PART_', ''), 10);
+      const readyCount = Object.values(session.houses).filter(h => h.isOnline).length;
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
-          <div style={{ 
-            width: '100%', 
-            maxWidth: '1200px', 
-            borderRadius: '24px', 
-            overflow: 'hidden', 
-            boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
-            border: '4px solid #D9AE6E',
-            position: 'relative'
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '60vh', gap: '32px' }}>
+          <div style={{
+            background: 'linear-gradient(145deg, rgba(30, 48, 38, 0.95), rgba(10, 18, 11, 0.98))',
+            border: '2px solid #D9AE6E',
+            borderRadius: '32px',
+            padding: '56px',
+            maxWidth: '700px',
+            textAlign: 'center',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(217, 174, 110, 0.2)'
           }}>
-            <video 
-              src="/0929.mp4" 
-              autoPlay 
-              controls
-              style={{ width: '100%', display: 'block' }}
-            />
+            <div style={{ fontSize: '14px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D9AE6E', fontWeight: 'bold', marginBottom: '12px' }}>
+              Part {partNum} / 5
+            </div>
+            <h2 style={{ fontSize: '38px', fontFamily: "'Cinzel', serif", color: '#F6E8CD', marginBottom: '20px' }}>
+              {PART_TITLES[partNum]}
+            </h2>
+            <p style={{ fontSize: '17px', color: 'rgba(246,232,205,0.75)', marginBottom: '32px' }}>
+              แต่ละบ้านกำลังทำกิจกรรมของตัวเองอยู่บนมือถือ/iPad — รอจนครบเวลาแล้วกดไปต่อ
+            </p>
+            <div style={{ fontSize: '15px', color: 'rgba(246,232,205,0.6)', marginBottom: '32px' }}>
+              บ้านออนไลน์: <strong style={{ color: '#4ade80' }}>{readyCount}</strong> / 6
+            </div>
+            <button
+              onClick={() => socket?.emit('hostStartNightMode')}
+              style={{
+                background: 'linear-gradient(135deg, #2c3e50, #000000)',
+                color: '#D9AE6E',
+                border: '2px solid #D9AE6E',
+                padding: '16px 40px',
+                borderRadius: '16px',
+                fontSize: '20px',
+                fontWeight: 'bold',
+                fontFamily: "'Noto Sans Thai', sans-serif",
+                cursor: 'pointer',
+                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(217, 174, 110, 0.3)'
+              }}
+            >
+              เข้าสู่คืนที่ {partNum} 🌙
+            </button>
           </div>
-          <button 
-            onClick={() => socket?.emit('hostStartPostTest')}
-            style={{
-              marginTop: '40px',
-              background: 'linear-gradient(135deg, #1E392A, #2D5A27)',
-              color: '#F6E8CD',
-              border: '2px solid #4ade80',
-              padding: '16px 48px',
-              borderRadius: '16px',
-              fontSize: '24px',
-              fontWeight: 'bold',
-              fontFamily: "'Noto Sans Thai', sans-serif",
-              cursor: 'pointer',
-              boxShadow: '0 8px 25px rgba(45, 90, 39, 0.6), inset 0 0 15px rgba(74, 222, 128, 0.3)'
-            }}
-          >
-            เริ่มแบบทดสอบหลังเรียน (Post-test) 🎯
-          </button>
         </div>
       );
     }
@@ -461,6 +476,30 @@ const HostView: React.FC = () => {
               {isAwake ? '✨ มีบางสิ่งที่กำลังจะเกิดขึ้นในความมืดมิด ✨' : '✨ ทุกบ้านหลับตาลงและรอฟังเสียงสวรรค์เรียกหา ✨'}
             </p>
           </div>
+          {(() => {
+            const completedPart = session.lastCompletedPart || 1;
+            const isLastRound = completedPart === 5;
+            return (
+              <button
+                onClick={() => isLastRound ? socket?.emit('hostFinishParts') : socket?.emit('hostStartPart', completedPart + 1)}
+                style={{
+                  marginTop: '40px',
+                  background: 'linear-gradient(135deg, #D9AE6E, #B88645)',
+                  color: '#1a1a1a',
+                  border: 'none',
+                  padding: '16px 40px',
+                  borderRadius: '16px',
+                  fontSize: '20px',
+                  fontWeight: 'bold',
+                  fontFamily: "'Noto Sans Thai', sans-serif",
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 25px rgba(217, 174, 110, 0.6)'
+                }}
+              >
+                {isLastRound ? 'เสร็จสิ้น ดูผลสรุป 🏆' : `ถัดไป: Part ${completedPart + 1} ➡️`}
+              </button>
+            );
+          })()}
         </div>
       );
     }
@@ -500,30 +539,13 @@ const HostView: React.FC = () => {
                     อันดับ {i + 1} - บ้านที่ {h.houseId} {i === 0 && '👑'}
                   </div>
                   <div style={{ fontSize: '20px', color: i === 0 ? '#fff' : 'rgba(255,255,255,0.8)' }}>
-                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/10)
+                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/5)
                   </div>
                 </div>
               ))}
             </div>
             <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center', gap: '24px' }}>
-              <button 
-                onClick={() => socket?.emit('hostStartNightMode')}
-                style={{
-                  background: 'linear-gradient(135deg, #2c3e50, #000000)',
-                  color: '#D9AE6E',
-                  border: '2px solid #D9AE6E',
-                  padding: '16px 40px',
-                  borderRadius: '16px',
-                  fontSize: '22px',
-                  fontWeight: 'bold',
-                  fontFamily: "'Noto Sans Thai', sans-serif",
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 25px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(217, 174, 110, 0.3)'
-                }}
-              >
-                เข้าสู่โหมดกลางคืน (เล่น Werewolf) 🐺
-              </button>
-              <button 
+              <button
                 onClick={() => socket?.emit('hostNewRound')}
                 style={{
                   background: 'linear-gradient(135deg, #1E392A, #2D5A27)',
@@ -567,7 +589,7 @@ const HostView: React.FC = () => {
           boxShadow: '0 12px 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(217, 174, 110, 0.1)'
         }}>
           <div style={{ fontSize: '28px', color: '#D9AE6E', fontFamily: "'Cinzel', serif", fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-            ภารกิจที่ {session.currentQuestionIndex + 1} <span style={{opacity: 0.6, fontSize: '22px'}}>/ 10</span>
+            ภารกิจที่ {session.currentQuestionIndex + 1} <span style={{opacity: 0.6, fontSize: '22px'}}>/ 5</span>
           </div>
           <div style={{ 
             fontSize: '56px', 

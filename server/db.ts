@@ -59,3 +59,71 @@ export const recordSessionFinished = async (sessionId: string) => {
     console.error('[db] failed to mark session finished:', err);
   }
 };
+
+// Curriculum Parts 1-5 — live read/write, not just history. savePartProgress
+// is called on every step change / field edit so a refresh never loses a
+// team's work; getPartProgress lets a later part (e.g. Part 4's Blueprint)
+// read what earlier parts saved for that same house.
+export const savePartProgress = async (
+  sessionId: string,
+  eventSlug: string,
+  houseId: number,
+  partNumber: number,
+  step: number,
+  data: Record<string, any>,
+  completed: boolean
+): Promise<boolean> => {
+  if (!client) return false;
+  try {
+    // Parts can start saving before hostStartGame's recordSessionStart ran
+    // (e.g. Supabase configured mid-session), so make sure the parent rows exist.
+    await client.from('events').upsert({ event_slug: eventSlug }, { onConflict: 'event_slug' });
+    await client.from('game_sessions').upsert({ id: sessionId, event_slug: eventSlug }, { onConflict: 'id' });
+
+    const row: Record<string, any> = {
+      session_id: sessionId,
+      house_id: houseId,
+      part_number: partNumber,
+      current_step: step,
+      data,
+      updated_at: new Date().toISOString()
+    };
+    if (completed) row.completed_at = new Date().toISOString();
+
+    const r = await client.from('part_progress').upsert(row, { onConflict: 'session_id,house_id,part_number' });
+    if (r.error) {
+      console.error('[db] part_progress upsert error:', r.error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error('[db] failed to save part progress:', err);
+    return false;
+  }
+};
+
+export const getPartProgress = async (
+  sessionId: string,
+  houseId: number
+): Promise<Record<number, { step: number; data: Record<string, any>; completedAt: string | null }>> => {
+  if (!client) return {};
+  try {
+    const r = await client
+      .from('part_progress')
+      .select('part_number, current_step, data, completed_at')
+      .eq('session_id', sessionId)
+      .eq('house_id', houseId);
+    if (r.error) {
+      console.error('[db] part_progress select error:', r.error);
+      return {};
+    }
+    const result: Record<number, { step: number; data: Record<string, any>; completedAt: string | null }> = {};
+    for (const row of r.data || []) {
+      result[row.part_number] = { step: row.current_step, data: row.data || {}, completedAt: row.completed_at };
+    }
+    return result;
+  } catch (err) {
+    console.error('[db] failed to get part progress:', err);
+    return {};
+  }
+};
