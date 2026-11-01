@@ -61,20 +61,19 @@ export const initializeNightMode = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
   currentSession.state = 'NIGHT_MODE';
   currentSession.awakeHouseId = null;
 
+  // Fixed house -> role mapping, matching the printed QR cards and
+  // constants/characters.ts (house 1 = Red Riding Hood, 2 = Wolf, etc).
+  // The "who got the wolf card" randomness already comes from the teacher
+  // handing out physical cards to groups fresh each session — shuffling
+  // again here just made the in-game role stop matching the card.
   const roles: import('./types').Role[] = [
-    'RED_RIDING_HOOD',
-    'GRANDMA',
-    'WOLF',
-    'HUNTER',
-    'WOODCUTTER',
-    'WITCH'
+    'RED_RIDING_HOOD', // house 1
+    'WOLF',            // house 2
+    'GRANDMA',         // house 3
+    'WOODCUTTER',      // house 4
+    'HUNTER',          // house 5
+    'WITCH'            // house 6
   ];
-
-  // Shuffle roles
-  for (let i = roles.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [roles[i], roles[j]] = [roles[j], roles[i]];
-  }
 
   // Find wolf house ID for woodcutter
   let wolfHouseId = 1;
