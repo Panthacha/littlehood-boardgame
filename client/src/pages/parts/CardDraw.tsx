@@ -33,7 +33,7 @@ export const dealFor = <T,>(deck: T[], gameSeed: string, houseId: number): T => 
   return deck[order[(houseId - 1) % deck.length]];
 };
 
-const FAN = 5;
+const FAN = 3; // face-down cards fanned out to pick from
 
 export const Deck: React.FC<{
   label: string; color: string; dark: string; dealt: CardFace; drawn: string | null; onDraw: (title: string) => void;
@@ -68,10 +68,10 @@ export const Deck: React.FC<{
           let transform = `translate(-50%, 0) rotate(${i * 0.8 - 1.6}deg) translateY(${-i * 2}px)`;
           if (phase === 'shuffling') transform = `translate(-50%, 0)`;
           if (phase === 'fan') transform = picked === null
-            ? `translate(calc(-50% + ${o * 44}px), ${Math.abs(o) * 8}px) rotate(${o * 9}deg)`
+            ? `translate(calc(-50% + ${o * 74}px), ${Math.abs(o) * 10}px) rotate(${o * 12}deg)`
             : isPicked
               ? `translate(-50%, -6px) scale(1.12)`
-              : `translate(calc(-50% + ${o * 44}px), ${Math.abs(o) * 8 + 26}px) rotate(${o * 9}deg) scale(0.85)`;
+              : `translate(calc(-50% + ${o * 74}px), ${Math.abs(o) * 10 + 26}px) rotate(${o * 12}deg) scale(0.85)`;
           return (
             <button
               key={i}
