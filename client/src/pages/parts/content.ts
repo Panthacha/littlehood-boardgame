@@ -7,33 +7,33 @@ export const PART_QUIZZES: Record<number, QuizDef> = {
   2: {
     question: 'ข้อใดอธิบาย "เนื้อเรื่อง (Story)" ได้ถูกต้องที่สุด?',
     options: [
-      { id: 'a', text: 'กฎกติกาที่บอกว่าทอยเต๋าได้กี่ครั้ง', correct: false },
-      { id: 'b', text: 'สิ่งที่ห่อหุ้มกลไกให้มีความหมายและอยากเล่นต่อ', correct: true },
-      { id: 'c', text: 'ราคาขายของกล่องเกม', correct: false }
+      { id: 'a', text: 'ขั้นตอนการทอยเต๋าและเดินหมาก', correct: false },
+      { id: 'b', text: 'สิ่งที่ทำให้กลไกมีความหมาย', correct: true },
+      { id: 'c', text: 'รายการอุปกรณ์ที่ใช้ในเกม', correct: false }
     ]
   },
   3: {
     question: 'ข้อใดคือตัวอย่างของ "กฎ (Rule)" ไม่ใช่ "กลไก (Mechanic)"?',
     options: [
-      { id: 'a', text: 'ผู้เล่นทอยเต๋าเพื่อเคลื่อนที่', correct: false },
-      { id: 'b', text: 'ห้ามเคลื่อนที่เกิน 6 ช่องต่อตา', correct: true },
-      { id: 'c', text: 'ผู้เล่นจั่วการ์ดจากกองกลาง', correct: false }
+      { id: 'a', text: 'ทอยเต๋าแล้วเดินตามแต้ม', correct: false },
+      { id: 'b', text: 'ห้ามเดินเกิน 6 ช่องต่อตา', correct: true },
+      { id: 'c', text: 'จั่วการ์ดจากกองกลางทุกครั้งที่ถึงตา', correct: false }
     ]
   },
   4: {
     question: 'ข้อใดคือ design draft ที่ดี?',
     options: [
-      { id: 'a', text: 'มีแค่ชื่อเกมอย่างเดียว', correct: false },
-      { id: 'b', text: 'ธีม กลไก กฎ อุปกรณ์ และเงื่อนไขชนะครบถ้วน ชัดเจน', correct: true },
-      { id: 'c', text: 'มีแค่ภาพประกอบสวย ๆ', correct: false }
+      { id: 'a', text: 'มีชื่อเกมและโลโก้ที่โดดเด่นสะดุดตา', correct: false },
+      { id: 'b', text: 'ระบุธีม กลไก กฎ และวิธีชนะครบ', correct: true },
+      { id: 'c', text: 'มีภาพประกอบสวยงามทุกหน้า', correct: false }
     ]
   },
   5: {
     question: 'ข้อใดคือตัวชี้วัดความสนุกที่ใช้ดูได้ง่าย ๆ ตอน playtest?',
     options: [
-      { id: 'a', text: 'ราคาของเกม', correct: false },
-      { id: 'b', text: 'ผู้เล่นเข้าใจกติกาไหม มีช่วงเบื่อไหม อยากเล่นซ้ำไหม', correct: true },
-      { id: 'c', text: 'จำนวนหน้าในคู่มือการเล่น', correct: false }
+      { id: 'a', text: 'ราคาขายของกล่องเกม', correct: false },
+      { id: 'b', text: 'ผู้เล่นเข้าใจกติกาและอยากเล่นซ้ำ', correct: true },
+      { id: 'c', text: 'จำนวนหน้าทั้งหมดในคู่มือการเล่นเกม', correct: false }
     ]
   }
 };
