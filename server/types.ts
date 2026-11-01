@@ -62,6 +62,7 @@ export interface Session {
   awakeHouseId?: number | null; // house currently awake in NIGHT_MODE
   lastCompletedPart?: number; // which Part (1-5) a NIGHT_MODE round follows, so the host's
                                // "next" button knows whether to go to the next Part or FINISHED
+  partsCompleted?: Record<number, number[]>; // Part number -> houses that finished it
   nightLog?: NightEvent[]; // every night's skill uses, accumulated across all 5 nights
 }
 

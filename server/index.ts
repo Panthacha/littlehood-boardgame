@@ -213,6 +213,16 @@ io.on('connection', (socket) => {
   socket.on('savePartProgress', async ({ houseId, partNumber, step, data, completed }, callback) => {
     const slug = socketEventSlug.get(socket.id) || DEFAULT_EVENT_SLUG;
     const session = getSession(slug);
+    // Track which houses reached the end of each Part in memory too, so the
+    // big screen can show "N/6 finished" even without Supabase configured.
+    if (completed && houseId >= 1 && houseId <= 6 && partNumber >= 1 && partNumber <= 5) {
+      const done = (session.partsCompleted ||= {});
+      const list = (done[partNumber] ||= []);
+      if (!list.includes(houseId)) {
+        list.push(houseId);
+        io.to(slug).emit('gameStateUpdate', session);
+      }
+    }
     const ok = await savePartProgress(session.id, slug, houseId, partNumber, step, data, !!completed);
     callback({ success: ok });
   });

@@ -409,6 +409,12 @@ const HostView: React.FC = () => {
             </p>
             <div style={{ fontSize: '15px', color: 'rgba(246,232,205,0.6)', marginBottom: '32px' }}>
               บ้านออนไลน์: <strong style={{ color: '#4ade80' }}>{readyCount}</strong> / 6
+              {' · '}ทำ Part นี้เสร็จแล้ว: <strong style={{ color: '#D9AE6E' }}>{session.partsCompleted?.[partNum]?.length || 0}</strong> / {readyCount}
+              {!!session.partsCompleted?.[partNum]?.length && (
+                <div style={{ marginTop: '8px' }}>
+                  {[...session.partsCompleted[partNum]].sort((a, b) => a - b).map(h => `บ้าน ${h} ✓`).join('  ')}
+                </div>
+              )}
             </div>
             {partNum > 1 && (
               <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(217,174,110,0.35)', borderRadius: '16px', padding: '20px 24px', marginBottom: '32px' }}>

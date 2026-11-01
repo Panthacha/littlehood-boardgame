@@ -4,6 +4,10 @@ import { useSocket } from '../context/SocketContext';
 import { nightNews } from '../utils/nightRecap';
 import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
 import Part1 from './parts/Part1';
+import Part2 from './parts/Part2';
+import Part3 from './parts/Part3';
+import Part4 from './parts/Part4';
+import Part5 from './parts/Part5';
 
 const roleData = {
   RED_RIDING_HOOD: { name: 'หนูน้อยหมวกแดง', hint: 'ฉันได้รับมอบหมายให้นำบางสิ่งไปยังปลายทาง แต่ระหว่างทางกลับพบทางเลือกที่ไม่ควรเลือก', skillName: 'ตรวจสอบคำใบ้บทบาท', icon: <Search /> },
@@ -230,22 +234,17 @@ const PlayerView: React.FC = () => {
         );
 
       case 'PART_1':
-        return (
-          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-            <Part1 houseId={houseId} />
-          </div>
-        );
-
       case 'PART_2':
       case 'PART_3':
       case 'PART_4':
-      case 'PART_5':
+      case 'PART_5': {
+        const PartView = { PART_1: Part1, PART_2: Part2, PART_3: Part3, PART_4: Part4, PART_5: Part5 }[session.state];
         return (
-          <div style={cardStyle}>
-            <h2 style={{ fontSize: '28px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '16px' }}>Part {session.state.replace('PART_', '')}</h2>
-            <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '24px' }}>กำลังพัฒนาหน้านี้อยู่ รอก่อนนะครับ 🚧</p>
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '0 16px', boxSizing: 'border-box' }}>
+            <PartView key={session.state} houseId={houseId} />
           </div>
         );
+      }
 
       case 'NIGHT_MODE':
         if (session.awakeHouseId !== houseId) {
