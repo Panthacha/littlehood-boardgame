@@ -10,8 +10,7 @@ interface ClassifyItem {
   isGame: boolean;
 }
 
-// Pictures: /part1/<id>.jpg, cut from the six framed panels in
-// "เกมและของเล่นในกรอบทอง six panels.png".
+// Pictures: /part1/<id>.webp, made from the framed artwork in "six panels/".
 const CLASSIFY_ITEMS: ClassifyItem[] = [
   { id: 'chess', label: 'หมากรุก', isGame: true },
   { id: 'uno', label: 'ไพ่อูโน', isGame: true },
@@ -146,7 +145,10 @@ const Part1: React.FC<Props> = ({ houseId }) => {
                   background: answered ? (correct ? 'rgba(47,107,58,0.12)' : 'rgba(168,35,58,0.1)') : 'rgba(255,250,238,0.5)',
                   border: `2px solid ${answered ? (correct ? 'rgba(47,107,58,0.55)' : 'rgba(168,35,58,0.45)') : 'rgba(122,85,48,0.3)'}`
                 }}>
-                  <img src={`/part1/${item.id}.jpg`} alt={item.label} style={{ width: '100%', maxWidth: '170px', aspectRatio: '522 / 470', objectFit: 'cover', borderRadius: '10px', boxShadow: '0 4px 10px rgba(60,30,10,0.35)' }} />
+                  {/* square slot; the picture keeps its own shape so the rounding trims its white corners */}
+                  <div style={{ width: '100%', maxWidth: '170px', aspectRatio: '1 / 1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src={`/part1/${item.id}.webp`} alt={item.label} style={{ display: 'block', maxWidth: '100%', maxHeight: '100%', borderRadius: '9%', boxShadow: '0 4px 10px rgba(60,30,10,0.35)' }} />
+                  </div>
                   <div style={{ fontSize: '15px', fontWeight: 'bold' }}>{item.label}</div>
                   {!answered ? (
                     <div style={{ display: 'flex', gap: '6px', width: '100%' }}>
