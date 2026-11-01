@@ -127,7 +127,7 @@ const AdminView: React.FC = () => {
                     }}
                     style={{ padding: '14px 32px', background: '#D9AE6E', color: '#1a1a1a', borderRadius: '12px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', border: 'none' }}
                   >
-                    {(session.lastCompletedPart || 1) === 5 ? 'จบคืนสุดท้าย ดูผลสรุป 🏆' : `จบคืนนี้ → ไป Part ${(session.lastCompletedPart || 1) + 1}`}
+                    {(session.lastCompletedPart || 1) === 5 ? 'จบคืนสุดท้าย → เริ่ม Posttest 📝' : `จบคืนนี้ → ไป Part ${(session.lastCompletedPart || 1) + 1}`}
                   </button>
                 </div>
               </div>

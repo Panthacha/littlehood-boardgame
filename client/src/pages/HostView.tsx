@@ -36,7 +36,7 @@ const Cottage: React.FC<{ id: number; lit: boolean; size?: number; children?: Re
 );
 
 // Ranked ledger used by both scoreboards
-const Ledger: React.FC<{ houses: HouseData[] }> = ({ houses }) => {
+const Ledger: React.FC<{ houses: HouseData[]; showPost?: boolean }> = ({ houses, showPost }) => {
   const sorted = [...houses].sort((a, b) => b.score - a.score);
   const top = Math.max(1, ...sorted.map(h => h.score));
   return (
@@ -53,7 +53,11 @@ const Ledger: React.FC<{ houses: HouseData[] }> = ({ houses }) => {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span className="lh-coin" /><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '26px' }}>{h.score}</strong></div>
-            <div style={{ fontSize: '14px', color: 'var(--lh-ink-soft)' }}>ตอบถูก {h.correctAnswers}/5</div>
+            <div style={{ fontSize: '14px', color: 'var(--lh-ink-soft)' }}>
+              {showPost
+                ? <>Pre {h.correctAnswers}/5 → Post <strong style={{ color: (h.postCorrectAnswers || 0) > h.correctAnswers ? '#2F6B3A' : 'var(--lh-ink)' }}>{h.postCorrectAnswers || 0}/5</strong></>
+                : <>ตอบถูก {h.correctAnswers}/5</>}
+            </div>
           </div>
         </div>
       ))}
@@ -266,7 +270,7 @@ const HostView: React.FC = () => {
             </>
           )}
           <div style={{ flex: 1 }} />
-          {sign(isLastRound ? 'เสร็จสิ้น ดูผลสรุป 🏆' : `ถัดไป: Part ${completedPart + 1} →`, () => isLastRound ? socket?.emit('hostFinishParts') : socket?.emit('hostStartPart', completedPart + 1), 'lh-sign--night')}
+          {sign(isLastRound ? 'เริ่ม Posttest 📝' : `ถัดไป: Part ${completedPart + 1} →`, () => isLastRound ? socket?.emit('hostFinishParts') : socket?.emit('hostStartPart', completedPart + 1), 'lh-sign--night')}
         </div>
       );
     }
@@ -277,8 +281,25 @@ const HostView: React.FC = () => {
           <div className="lh-parchment lh-flip" style={pageCard}>
             <div className="lh-kicker" style={{ textAlign: 'center' }}>จบการเดินทาง</div>
             <h2 className="lh-display" style={{ fontSize: '42px', textAlign: 'center', margin: '6px 0 26px' }}>อันดับหมู่บ้านทั้งหมด</h2>
-            <Ledger houses={Object.values(session.houses)} />
+            <Ledger houses={Object.values(session.houses)} showPost />
           </div>
+          {(() => {
+            const joined = Object.values(session.houses).filter(h => h.isOnline);
+            const pre = joined.reduce((a, h) => a + h.correctAnswers, 0);
+            const post = joined.reduce((a, h) => a + (h.postCorrectAnswers || 0), 0);
+            const max = joined.length * 5 || 1;
+            return (
+              <div className="lh-parchment lh-rise" style={{ ...pageCard, animationDelay: '0.3s', textAlign: 'center' }}>
+                <h3 className="lh-display" style={{ fontSize: '28px', marginBottom: '14px' }}>ความรู้ก่อน → หลังการเดินทาง</h3>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '36px' }}>
+                  <div><div className="lh-kicker">Pre-test</div><div style={{ fontFamily: "'Cinzel', serif", fontSize: '46px', fontWeight: 700 }}>{Math.round((pre / max) * 100)}%</div></div>
+                  <div style={{ fontSize: '40px', color: 'var(--lh-ink-soft)' }}>→</div>
+                  <div><div className="lh-kicker">Posttest</div><div className="lh-pop" style={{ fontFamily: "'Cinzel', serif", fontSize: '46px', fontWeight: 700, color: post >= pre ? '#2F6B3A' : 'var(--lh-hood)' }}>{Math.round((post / max) * 100)}%</div></div>
+                </div>
+                <p style={{ marginTop: '8px', color: 'var(--lh-ink-soft)' }}>ตอบถูกรวมทุกบ้าน: {pre} → {post} จาก {joined.length * 5} ข้อ</p>
+              </div>
+            );
+          })()}
           <div className="lh-parchment lh-rise" style={{ ...pageCard, animationDelay: '0.6s' }}>
             <h3 className="lh-display" style={{ fontSize: '30px', textAlign: 'center', marginBottom: '16px' }}>เรื่องราวตลอด 5 คืน</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '14px' }}>
@@ -308,7 +329,7 @@ const HostView: React.FC = () => {
         <div key={session.currentQuestionIndex} className="lh-parchment lh-flip" style={{ padding: '30px 44px 36px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '24px', marginBottom: '22px' }}>
             <div>
-              <div className="lh-kicker">ภารกิจที่ {session.currentQuestionIndex + 1} / 5</div>
+              <div className="lh-kicker">{session.testPhase === 'POST' ? 'Posttest' : 'Pre-test'} · ภารกิจที่ {session.currentQuestionIndex + 1} / 5</div>
               <div style={{ fontSize: '18px', color: 'var(--lh-ink-soft)', marginTop: '4px' }}>ตอบแล้ว <strong style={{ fontFamily: "'Cinzel', serif", fontSize: '24px', color: 'var(--lh-ink)' }}>{submittedCount}</strong> / {totalOnline} บ้าน</div>
             </div>
             <div style={{ position: 'relative', width: '104px', height: '104px', borderRadius: '50%', background: `conic-gradient(${isOpen && timeRemaining <= 10 ? 'var(--lh-hood)' : '#8A5A1E'} ${isOpen ? pct * 3.6 : 0}deg, rgba(122,85,48,0.18) 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 1s linear', flexShrink: 0 }}>
@@ -363,7 +384,7 @@ const HostView: React.FC = () => {
           </div>
           <div>
             {session.state === 'QUESTION_CLOSED' && sign('เปิดเฉลย ✨', () => socket?.emit('hostReveal'), 'lh-glow-pulse')}
-            {isReveal && sign(session.currentQuestionIndex >= 4 ? 'ดูผลสรุป →' : 'ข้อถัดไป →', () => socket?.emit('hostNextQuestion'))}
+            {isReveal && sign(session.currentQuestionIndex >= 4 ? (session.testPhase === 'POST' ? 'ดูผลสรุปทั้งหมด 🏆' : 'ดูอันดับครึ่งแรก →') : 'ข้อถัดไป →', () => socket?.emit('hostNextQuestion'))}
           </div>
         </div>
       </div>

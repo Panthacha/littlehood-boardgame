@@ -197,7 +197,7 @@ const PlayerView: React.FC = () => {
           <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
             <div className="lh-parchment lh-flip" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
               <div>
-                {kicker(`ภารกิจที่ ${session.currentQuestionIndex + 1} / 5`)}
+                {kicker(`${session.testPhase === 'POST' ? 'Posttest' : 'Pre-test'} · ข้อ ${session.currentQuestionIndex + 1} / 5`)}
                 <div style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>ดูโจทย์บนจอใหญ่ แล้วเลือกคำตอบ</div>
               </div>
               <span key={timeRemaining} className={urgent ? 'lh-pop' : ''} style={{ fontFamily: "'Cinzel', serif", fontSize: '34px', fontWeight: 700, color: urgent ? 'var(--lh-hood)' : 'var(--lh-ink)', minWidth: '56px', textAlign: 'right' }}>{timeRemaining}</span>
@@ -557,7 +557,7 @@ const PlayerView: React.FC = () => {
             {title('ขอบคุณที่ร่วมออกเดินทาง')}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', margin: '10px 0 16px' }}>
               <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>เหรียญรวม</div><div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}><span className="lh-coin" /><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.score}</strong></div></div>
-              <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>Pre-test ตอบถูก</div><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.correctAnswers}/5</strong></div>
+              <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>Pre → Post</div><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.correctAnswers} → {house.postCorrectAnswers || 0}</strong><span style={{ fontSize: '14px' }}> /5</span></div>
             </div>
             <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>รอผู้สอนประกาศผลบนจอใหญ่</p>
           </Card>

@@ -27,6 +27,9 @@ create table if not exists house_results (
   unique (session_id, house_id)
 );
 
+-- Posttest (same 5 questions, after night 5). Safe to run on an existing database.
+alter table house_results add column if not exists post_correct_answers integer;
+
 create index if not exists idx_game_sessions_event_slug on game_sessions(event_slug);
 create index if not exists idx_house_results_session_id on house_results(session_id);
 

@@ -39,10 +39,17 @@ export const recordSessionResults = async (sessionId: string, houses: Record<num
       house_id: h.houseId,
       score: h.score,
       correct_answers: h.correctAnswers,
+      post_correct_answers: h.postCorrectAnswers ?? null,
       role: h.role ?? null,
       is_dead: h.isDead ?? null,
     }));
-    const r = await client.from('house_results').upsert(rows, { onConflict: 'session_id,house_id' });
+    let r = await client.from('house_results').upsert(rows, { onConflict: 'session_id,house_id' });
+    if (r.error?.code === 'PGRST204') {
+      // post_correct_answers column not added yet (see sql/schema.sql) — save the rest
+      console.warn('[db] house_results.post_correct_answers missing; run the ALTER in sql/schema.sql');
+      const legacy = rows.map(({ post_correct_answers, ...rest }) => rest);
+      r = await client.from('house_results').upsert(legacy, { onConflict: 'session_id,house_id' });
+    }
     if (r.error) console.error('[db] house_results upsert error:', r.error);
     else console.log('[db] house results recorded:', sessionId);
   } catch (err) {

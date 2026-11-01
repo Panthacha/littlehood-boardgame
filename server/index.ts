@@ -18,6 +18,7 @@ import {
   resetSession,
   initializeNightMode,
   houseOwnedBy,
+  startPosttest,
   releaseHouse,
   processNightSkill
 } from './gameState';
@@ -123,9 +124,14 @@ io.on('connection', (socket) => {
 
     const currentIndex = getSession().currentQuestionIndex;
 
-    // If we just finished Q5 (index 4), go to MID_SCOREBOARD
+    // Finished Q5: the Pre-test goes to MID_SCOREBOARD, the Posttest ends the game
     if (currentIndex === 4) {
-      setGameState(DEFAULT_EVENT_SLUG, 'MID_SCOREBOARD');
+      const done = getSession().testPhase === 'POST';
+      setGameState(DEFAULT_EVENT_SLUG, done ? 'FINISHED' : 'MID_SCOREBOARD');
+      if (done) {
+        const s = getSession();
+        recordSessionResults(s.id, s.houses).then(() => recordSessionFinished(s.id));
+      }
       io.to(DEFAULT_EVENT_SLUG).emit('gameStateUpdate', getSession());
       return;
     }
@@ -142,7 +148,7 @@ io.on('connection', (socket) => {
   });
 
   // Sequence: MID_SCOREBOARD -> Part 1 -> night 1 -> Part 2 -> night 2 -> ...
-  // -> Part 5 -> night 5 -> FINISHED. A NIGHT_MODE round always follows the
+  // -> Part 5 -> night 5 -> Posttest -> FINISHED. A NIGHT_MODE round always follows the
   // Part it's attached to (session.lastCompletedPart), never a standalone
   // bonus — see gameState.ts's initializeNightMode for why roles/injuries
   // persist across the 5 rounds instead of resetting each time.
@@ -158,11 +164,13 @@ io.on('connection', (socket) => {
     io.to(DEFAULT_EVENT_SLUG).emit('gameStateUpdate', getSession());
   });
 
+  // After night 5 -> Posttest (same 5 questions) -> FINISHED
   socket.on('hostFinishParts', () => {
     const session = getSession();
     if (session.state !== 'NIGHT_MODE' || session.lastCompletedPart !== 5) return;
-    setGameState(DEFAULT_EVENT_SLUG, 'FINISHED');
-    io.to(DEFAULT_EVENT_SLUG).emit('gameStateUpdate', getSession());
+    startPosttest();
+    nextQuestion();
+    startRound();
   });
 
   socket.on('hostReveal', () => {

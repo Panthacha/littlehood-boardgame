@@ -152,7 +152,7 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
           {!data.signaled ? (
             <button className="lh-sign lh-sign--hood lh-glow-pulse" onClick={() => update({ signaled: true })}>ส่งสัญญาณจบกิจกรรมให้ครู</button>
           ) : (
-            <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#2F6B3A' }}>✓ ส่งสัญญาณแล้ว รอผู้สอนพาเข้าสู่คืนสุดท้ายบนจอใหญ่</p>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#2F6B3A' }}>✓ ส่งสัญญาณแล้ว รอผู้สอนพาเข้าสู่คืนสุดท้าย แล้วตามด้วย Posttest</p>
           )}
         </div>
       )}

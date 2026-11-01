@@ -344,13 +344,25 @@ export const calculateScores = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
       scoreDelta = 100 + bonus;
 
       house.score += scoreDelta;
-      house.correctAnswers += 1;
+      if (currentSession.testPhase === 'POST') house.postCorrectAnswers = (house.postCorrectAnswers || 0) + 1;
+      else house.correctAnswers += 1;
     }
 
     results[id] = { correct: isCorrect, scoreDelta };
   }
 
   return results;
+};
+
+// After night 5: run the same 5 questions again as the Posttest. Score
+// points still count toward the house total; correct answers are kept
+// apart (postCorrectAnswers) so the end screen can compare before/after.
+export const startPosttest = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
+  const currentSession = getSession(eventSlug);
+  currentSession.testPhase = 'POST';
+  currentSession.currentQuestionIndex = -1;
+  currentSession.awakeHouseId = null;
+  for (let id = 1; id <= 6; id++) currentSession.houses[id].postCorrectAnswers = 0;
 };
 
 export const setGameState = (eventSlug: string, state: GameState) => {

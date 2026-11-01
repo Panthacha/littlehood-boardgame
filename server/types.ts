@@ -38,7 +38,8 @@ export interface HouseData {
   houseId: number;
   players: Player[];
   score: number;
-  correctAnswers: number;
+  correctAnswers: number; // Pre-test
+  postCorrectAnswers?: number; // Posttest (same 5 questions, after night 5)
   hasSubmitted: boolean;
   selectedKey?: string;
   isOnline: boolean;
@@ -65,6 +66,7 @@ export interface Session {
   lastCompletedPart?: number; // which Part (1-5) a NIGHT_MODE round follows, so the host's
                                // "next" button knows whether to go to the next Part or FINISHED
   partsCompleted?: Record<number, number[]>; // Part number -> houses that finished it
+  testPhase?: 'PRE' | 'POST'; // which run of the 5 questions is in progress
   nightLog?: NightEvent[]; // every night's skill uses, accumulated across all 5 nights
 }
 
