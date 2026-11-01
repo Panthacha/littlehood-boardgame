@@ -20,15 +20,15 @@ const CLASSIFY_ITEMS: ClassifyItem[] = [
   { id: 'phone', label: 'โทรศัพท์มือถือ', isGame: false }
 ];
 
-// Matching step: picture on the left (/part1/piece-<id>.webp, close-ups cut
-// from the "six panels" artwork), word on the right.
+// Matching step: picture on the left (/part1/piece-<id>.webp, from the framed
+// artwork in "จับคู่/"), word on the right.
 const PIECE_ITEMS = [
   { id: 'board', label: 'กระดาน' },
   { id: 'card', label: 'การ์ด' },
   { id: 'dice', label: 'เต๋า' },
   { id: 'pawn', label: 'ตัวเดิน' }
 ];
-const MATCH_ROW_H = 92;
+const MATCH_ROW_H = 118;
 
 const LABEL_ORDER = ['dice', 'pawn', 'board', 'card'];
 
@@ -177,12 +177,15 @@ const Part1: React.FC<Props> = ({ houseId }) => {
                     aria-label={matched ? `ภาพ${p.label} (จับคู่แล้ว)` : 'ภาพชิ้นส่วนเกม'}
                     className={isSelected ? 'lh-pop' : ''}
                     style={{
-                      position: 'relative', height: `${MATCH_ROW_H}px`, padding: 0, borderRadius: '12px', overflow: 'hidden', cursor: matched ? 'default' : 'pointer',
-                      border: `3px solid ${matched ? '#B8892A' : isSelected ? 'var(--lh-hood)' : 'rgba(122,85,48,0.35)'}`,
-                      boxShadow: matched ? '0 0 14px rgba(255,200,80,0.6)' : isSelected ? '0 0 0 3px rgba(168,35,58,0.25)' : '0 3px 0 rgba(90,55,25,0.3)',
-                      opacity: 1, filter: 'none', background: '#2B1D12'
+                      position: 'relative', height: `${MATCH_ROW_H}px`, padding: 0, border: 'none', background: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: matched ? 'default' : 'pointer', opacity: 1, filter: 'none'
                     }}>
-                    <img src={`/part1/piece-${p.id}.webp`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: p.id === 'pawn' ? 'center 20%' : 'center', display: 'block' }} />
+                    {/* the whole framed picture; selection/match shown as a glow around it */}
+                    <img src={`/part1/piece-${p.id}.webp`} alt="" style={{
+                      height: '100%', aspectRatio: '1 / 1', display: 'block', borderRadius: '10%',
+                      outline: matched ? '3px solid #B8892A' : isSelected ? '3px solid var(--lh-hood)' : 'none', outlineOffset: '2px',
+                      boxShadow: matched ? '0 0 16px rgba(255,200,80,0.75)' : isSelected ? '0 0 16px rgba(168,35,58,0.55)' : '0 4px 8px rgba(60,30,10,0.35)'
+                    }} />
                     {matched && (
                       <span className="lh-stamp" style={{ position: 'absolute', right: '6px', bottom: '6px', padding: '2px 8px', borderRadius: '8px', background: 'rgba(243,231,203,0.95)', color: '#2F6B3A', fontWeight: 700, fontSize: '13px' }}>✓ {p.label}</span>
                     )}
