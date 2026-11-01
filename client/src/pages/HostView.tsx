@@ -104,6 +104,16 @@ const HostView: React.FC = () => {
     };
   }, [socket, connected]);
 
+  // Opening (or reloading) the big screen mid-game should land on the
+  // running mission, not the lobby with a disabled start button.
+  const sessionState = session?.state;
+  const [autoTabbed, setAutoTabbed] = useState(false);
+  useEffect(() => {
+    if (!sessionState || autoTabbed) return;
+    setAutoTabbed(true);
+    if (sessionState !== 'LOBBY') setActiveTab('QUIZ');
+  }, [sessionState, autoTabbed]);
+
   if (!connected || !session) {
     return (
       <ForestScene>
@@ -152,7 +162,12 @@ const HostView: React.FC = () => {
           })}
         </div>
 
-        {sign(session.state === 'LOBBY' ? 'เริ่มการเดินทาง →' : 'เกมเริ่มแล้ว', () => setPlayingIntro(true), `lh-sign--hood ${canStart ? 'lh-glow-pulse' : ''}`, { minWidth: '360px' }, !canStart)}
+        {session.state === 'LOBBY'
+          ? sign('เริ่มการเดินทาง →', () => setPlayingIntro(true), `lh-sign--hood ${canStart ? 'lh-glow-pulse' : ''}`, { minWidth: '360px' }, !canStart)
+          : sign('เกมกำลังดำเนินอยู่ — ไปที่ภารกิจ →', () => setActiveTab('QUIZ'), 'lh-glow-pulse', { minWidth: '360px' })}
+        {session.state === 'LOBBY' && readyHousesCount === 0 && (
+          <p style={{ marginTop: '-20px', color: 'var(--lh-cream)', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>รอให้มีอย่างน้อย 1 บ้านเข้าร่วมก่อน จึงจะเริ่มได้</p>
+        )}
       </div>
     );
   };
