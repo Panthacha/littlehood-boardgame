@@ -328,3 +328,8 @@ textarea.lh-input { padding: 12px 14px; line-height: 1.6; resize: vertical; }
   box-shadow: 0 4px 0 var(--lh-wood-dark), inset 0 2px 0 rgba(255, 220, 160, 0.3);
 }
 .lh-ledger-row { animation: lh-rise 0.6s ease-out both; }
+
+/* Part 3 card shuffle */
+.lh-card-shuffle { animation: lh-card-shuffle 0.35s ease-in-out 4 alternate; }
+@keyframes lh-card-shuffle { 0% { transform: translate(-50%, 0) rotate(0); } 100% { transform: translate(calc(-50% + var(--sx)), -6px) rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) { .lh-card-shuffle { animation: none !important; } }

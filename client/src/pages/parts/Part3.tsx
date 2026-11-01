@@ -1,6 +1,8 @@
 import React from 'react';
-import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Pills, CountdownTimer, SummaryCard, DoneScreen, Loading, labelOf } from './kit';
-import { PART_QUIZZES, MECHANICS, FREQUENCIES, OUTCOMES, STANCES } from './content';
+import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Pills, SummaryCard, DoneScreen, Loading, labelOf } from './kit';
+import { useSocket } from '../../context/SocketContext';
+import { Deck, dealFor } from './CardDraw';
+import { PART_QUIZZES, MECHANICS, FREQUENCIES, OUTCOMES, STANCES, MECHANIC_CARDS, RULE_CARDS } from './content';
 
 interface Part3Data {
   quizPicked: string | null;
@@ -20,13 +22,20 @@ const LAST = 6;
 const MONO_COLORS = ['#9D3543', '#2D5A27', '#3A3A3A', '#B88645', '#2D5A27'];
 
 const Part3: React.FC<{ houseId: number }> = ({ houseId }) => {
+  const { session } = useSocket();
   const { loaded, step, data, update, goStep, allParts } = usePartProgress<Part3Data>(houseId, 3, EMPTY, LAST);
   if (!loaded) return <Loading />;
 
   const p2 = allParts[2]?.data || {};
   let canAdvance = true;
   if (step === 1) canAdvance = !!data.quizPicked;
-  if (step === 3) canAdvance = !!(data.drawnMechanic.trim() && data.drawnRule.trim() && data.applyIdea.trim());
+  if (step === 2) canAdvance = !!(data.drawnMechanic && data.drawnRule);
+  if (step === 3) canAdvance = !!data.applyIdea.trim();
+
+  // Each game deals the decks differently; each house gets its own card.
+  const seed = session?.id || 'littlehood';
+  const mechanicCard = dealFor(MECHANIC_CARDS, `${seed}:mechanic`, houseId);
+  const ruleCard = dealFor(RULE_CARDS, `${seed}:rule`, houseId);
   if (step === 4) canAdvance = !!(data.frequency && data.outcome && data.abilityName.trim() && data.abilityDesc.trim());
   if (step === 5) canAdvance = !!(data.balance1.trim() && data.balance2.trim());
 
@@ -64,21 +73,24 @@ const Part3: React.FC<{ houseId: number }> = ({ houseId }) => {
       )}
 
       {step === 2 && (
-        <Section title="ด่านที่ 2 — จั่วการ์ด Mechanic / Rule">
-          <Box>
-            <div>1. หยิบการ์ด 1 ใบจากกอง <strong>Mechanic</strong></div>
-            <div>2. หยิบการ์ด 1 ใบจากกอง <strong>Rule</strong></div>
-            <div style={{ fontSize: '13px', opacity: 0.7 }}>จับคู่ 2 ใบนี้เข้าด้วยกัน แล้วคุยกันว่าจะเอามาปรับใช้กับ{p2.charName ? ` "${p2.charName}"` : 'ตัวละครเสริม'}ยังไง — เมื่อพร้อมแล้วกดเริ่มจับเวลา</div>
-          </Box>
-          <CountdownTimer seconds={180} doneText="หมดเวลา! ไปสรุปผลกันต่อได้เลย" />
+        <Section title="ด่านที่ 2 — จั่วการ์ดกลไก & กฎ">
+          <Note>สับไพ่ทั้ง 2 กอง แล้วเลือกมากองละ 1 ใบ — แต่ละบ้านจะได้การ์ดไม่ซ้ำกัน</Note>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+            <Deck label="กลไก" color="#2F6B3A" dark="#163A1C" dealt={mechanicCard} drawn={data.drawnMechanic || null}
+              onDraw={(t) => update({ drawnMechanic: t })} />
+            <Deck label="กฎ" color="#8E1B2C" dark="#5A0E1A" dealt={ruleCard} drawn={data.drawnRule || null}
+              onDraw={(t) => update({ drawnRule: t })} />
+          </div>
         </Section>
       )}
 
       {step === 3 && (
-        <Section title="ด่านที่ 3 — สรุปกลไก+กฎที่จั่วได้">
-          <Field label="กลไกที่จั่วได้" value={data.drawnMechanic} onChange={(v) => update({ drawnMechanic: v })} placeholder="เช่น ซ่อนข้อมูล" />
-          <Field label="กฎที่จั่วได้" value={data.drawnRule} onChange={(v) => update({ drawnRule: v })} placeholder="เช่น เปิดเผยข้อมูลได้แค่คนเดียว" />
-          <Field label="จะเอามาปรับใช้กับตัวละครเสริมยังไง" value={data.applyIdea} onChange={(v) => update({ applyIdea: v })} placeholder="เช่น ให้ตัวละครแอบดูข้อมูลได้คนเดียวตอนกลางคืน" />
+        <Section title="ด่านที่ 3 — เอาการ์ดมาใช้กับตัวละคร">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
+            <Box><div style={{ fontSize: '12px', fontWeight: 700, color: '#2F6B3A' }}>กลไกที่ได้</div><div className="lh-display" style={{ fontSize: '17px' }}>{data.drawnMechanic}</div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)' }}>{MECHANIC_CARDS.find(c => c.title === data.drawnMechanic)?.desc}</div></Box>
+            <Box><div style={{ fontSize: '12px', fontWeight: 700, color: '#8E1B2C' }}>กฎที่ได้</div><div className="lh-display" style={{ fontSize: '17px' }}>{data.drawnRule}</div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)' }}>{RULE_CARDS.find(c => c.title === data.drawnRule)?.desc}</div></Box>
+          </div>
+          <Field multiline label={`จะเอามาปรับใช้กับ${p2.charName ? ` "${p2.charName}"` : 'ตัวละครเสริม'}ยังไง`} value={data.applyIdea} onChange={(v) => update({ applyIdea: v })} placeholder="เช่น ให้ตัวละครแอบดูข้อมูลได้คนเดียวตอนกลางคืน" />
         </Section>
       )}
 
