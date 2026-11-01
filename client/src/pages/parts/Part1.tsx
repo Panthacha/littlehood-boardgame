@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
-import { PartShell, Section, Note, Field, SummaryCard, DoneScreen, Loading } from './kit';
+import { PartShell, Section, Note, Field, SummaryCard, DoneScreen, Loading, GOLD } from './kit';
+import { GAME_THEME } from './content';
 import { SparkleBurst } from '../../theme/Forest';
 
 interface ClassifyItem {
@@ -37,7 +38,7 @@ interface Part1Data {
   gameGoal: string;
 }
 
-const EMPTY_DATA: Part1Data = { classifyAnswers: {}, matches: {}, gameName: '', gameTheme: '', gameGoal: '' };
+const EMPTY_DATA: Part1Data = { classifyAnswers: {}, matches: {}, gameName: '', gameTheme: GAME_THEME, gameGoal: '' };
 
 interface Props {
   houseId: number;
@@ -59,7 +60,7 @@ const Part1: React.FC<Props> = ({ houseId }) => {
       const saved = res?.parts?.[1];
       if (saved) {
         setStep(saved.step ?? 0);
-        setData({ ...EMPTY_DATA, ...(saved.data || {}) });
+        setData({ ...EMPTY_DATA, ...(saved.data || {}), gameTheme: GAME_THEME });
       }
       setLoaded(true);
     });
@@ -90,7 +91,7 @@ const Part1: React.FC<Props> = ({ houseId }) => {
 
   const classifyDone = CLASSIFY_ITEMS.every((it) => data.classifyAnswers[it.id] !== undefined);
   const matchDone = PIECE_ITEMS.every((p) => data.matches[p.id]);
-  const formDone = data.gameName.trim() && data.gameTheme.trim() && data.gameGoal.trim();
+  const formDone = data.gameName.trim() && data.gameGoal.trim();
 
   let canAdvance = true;
   if (step === 0) canAdvance = classifyDone;
@@ -204,14 +205,19 @@ const Part1: React.FC<Props> = ({ houseId }) => {
         <Section title="ไอเดียเกมแรกของทีม">
           <Note>เริ่มต้นสั้น ๆ ก่อน เดี๋ยวพาร์ทถัดไปจะต่อยอดจากตรงนี้</Note>
           <Field label="ชื่อเกม" value={data.gameName} onChange={(v) => updateData({ gameName: v })} placeholder="เช่น ล่าหมาป่าแห่งป่าใหญ่" />
-          <Field label="ธีม" value={data.gameTheme} onChange={(v) => updateData({ gameTheme: v })} placeholder="เช่น หมู่บ้านกลางป่าในคืนพระจันทร์เต็มดวง" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '14px', fontWeight: 'bold', color: GOLD }}>ธีม (ธีมหลักของเกม เปลี่ยนไม่ได้)</span>
+            <div aria-readonly="true" className="lh-input" style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(168,35,58,0.08)', borderStyle: 'dashed', fontWeight: 700 }}>
+              <span aria-hidden="true">🔒</span>{GAME_THEME}
+            </div>
+          </div>
           <Field label="เป้าหมายเกม" value={data.gameGoal} onChange={(v) => updateData({ gameGoal: v })} placeholder="เช่น หาตัวหมาป่าให้เจอก่อนหมู่บ้านถูกจับหมด" />
         </Section>
       )}
 
       {step === 3 && (
         <DoneScreen title="เสร็จพาร์ท 1 แล้ว!" subtitle="รอผู้สอนพาเข้าสู่คืนที่ 1 บนจอใหญ่">
-          <SummaryCard rows={[['ชื่อเกม', data.gameName], ['ธีม', data.gameTheme], ['เป้าหมายเกม', data.gameGoal]]} />
+          <SummaryCard rows={[['ชื่อเกม', data.gameName], ['ธีม', GAME_THEME], ['เป้าหมายเกม', data.gameGoal]]} />
         </DoneScreen>
       )}
     </PartShell>

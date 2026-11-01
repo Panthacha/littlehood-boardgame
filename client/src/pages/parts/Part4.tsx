@@ -1,6 +1,6 @@
 import React from 'react';
 import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Chips, SummaryCard, DoneScreen, Loading, labelOf, toggleIn, GOLD } from './kit';
-import { PART_QUIZZES, EQUIPMENT, STANCES, FREQUENCIES, OUTCOMES } from './content';
+import { PART_QUIZZES, EQUIPMENT, STANCES, FREQUENCIES, OUTCOMES, GAME_THEME } from './content';
 
 interface Part4Data {
   quizPicked: string | null;
@@ -48,7 +48,7 @@ const Part4: React.FC<{ houseId: number }> = ({ houseId }) => {
           <Note>ระบบดึงสิ่งที่ทีมทำไว้ใน Part 1-3 มารวมให้อัตโนมัติ</Note>
           <SummaryCard rows={[
             ['จาก Part 1 — ชื่อเกม', p1.gameName],
-            ['ธีม', p1.gameTheme],
+            ['ธีม', GAME_THEME],
             ['เป้าหมาย', p1.gameGoal]
           ]} />
           <SummaryCard rows={[

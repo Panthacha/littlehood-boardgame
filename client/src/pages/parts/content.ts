@@ -84,3 +84,7 @@ export const RULE_CARDS = [
   { title: 'ผิดกติกาถอยหลัง', desc: 'ถ้าทำผิดกติกา ต้องถอยหลัง 2 ช่อง' },
   { title: 'เฉพาะกลางคืน', desc: 'ใช้ความสามารถพิเศษได้เฉพาะตอนกลางคืน' }
 ];
+
+// The game's theme is fixed — every team designs inside the Little Red Riding
+// Hood world, so Part 1 shows it locked instead of asking for one.
+export const GAME_THEME = 'หนูน้อยหมวกแดง';

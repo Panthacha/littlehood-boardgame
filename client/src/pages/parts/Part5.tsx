@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
 import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Chips, Label, SummaryCard, Loading, labelOf, toggleIn, isQuizCorrect, fmt, GOLD } from './kit';
-import { PART_QUIZZES, PROBLEMS, STANCES, FREQUENCIES, OUTCOMES } from './content';
+import { PART_QUIZZES, PROBLEMS, STANCES, FREQUENCIES, OUTCOMES, GAME_THEME } from './content';
 
 interface Part5Data {
   quizPicked: string | null;
@@ -110,7 +110,7 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
           <Note>ใช้หน้านี้เป็นโน้ตตอนพรีเซนต์ ระบบรวมงานของทีมจากทุกพาร์ทมาให้แล้ว</Note>
           <SummaryCard rows={[
             ['ชื่อเกม / เป้าหมาย', p1.gameName ? `${p1.gameName} — ${p1.gameGoal || ''}` : ''],
-            ['ธีม', p1.gameTheme],
+            ['ธีม', GAME_THEME],
             ['ตัวละครเสริม', p2.charName ? `${p2.charName} (${(p2.traits || []).join(', ')} · ${labelOf(STANCES, p2.stance)})` : ''],
             ['ความสามารถ', p3.abilityName ? `${p3.abilityName} — ${labelOf(FREQUENCIES, p3.frequency)}, ${labelOf(OUTCOMES, p3.outcome)}: ${p3.abilityDesc || ''}` : ''],
             ['กลไก / กฎ', p3.drawnMechanic ? `${p3.drawnMechanic} / ${p3.drawnRule || ''}` : ''],
