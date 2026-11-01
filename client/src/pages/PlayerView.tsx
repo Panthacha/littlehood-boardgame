@@ -33,6 +33,11 @@ const PlayerView: React.FC = () => {
   
   const { socket, session, connected } = useSocket();
   const [error, setError] = useState('');
+  // true once the server accepted this tab into the house; used to notice
+  // when it's later removed (teacher pressed "ปล่อยบ้าน", or this browser
+  // entered another house in another tab — tabs share one device id)
+  const [joined, setJoined] = useState(false);
+  const [rejoinTick, setRejoinTick] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [countdown, setCountdown] = useState(0);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -48,9 +53,13 @@ const PlayerView: React.FC = () => {
   useEffect(() => {
     if (!socket || !connected || !houseId) return;
 
+    setJoined(false);
     socket.emit('joinLobby', { eventSlug: sessionId || '', houseId, deviceId: getDeviceId() }, (res) => {
       if (res.error) {
         setError(res.error);
+      } else {
+        setError('');
+        setJoined(true);
       }
     });
 
@@ -64,7 +73,7 @@ const PlayerView: React.FC = () => {
       socket.off('timeUpdate', onTimeUpdate);
       socket.off('countdownUpdate', onCountdown);
     };
-  }, [socket, connected, sessionId, houseId]);
+  }, [socket, connected, sessionId, houseId, rejoinTick]);
 
   // Night Mode now repeats after every Part — clear last round's local UI state
   // so the house can act again in the new round.
@@ -120,6 +129,27 @@ const PlayerView: React.FC = () => {
 
   const house = session.houses[houseId];
   if (!house) return <div className="min-h-screen forest-bg p-6">ไม่พบบ้าน</div>;
+
+  const removed = joined && !!socket?.id && !house.players.some(p => p.socketId === socket.id);
+  if (removed) {
+    return (
+      <ForestScene image="/village-bg.jpg">
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <Card>
+            <img src={`/houses/${houseId}.png`} alt="" className="lh-house is-dark" style={{ width: '170px', margin: '-24px auto -34px' }} />
+            <h2 className="lh-display" style={{ fontSize: '24px', margin: '0 0 10px' }}>เครื่องนี้ออกจากบ้านที่ {houseId} แล้ว</h2>
+            <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)', marginBottom: '18px', lineHeight: 1.6 }}>
+              ผู้สอนกด "ปล่อยบ้าน" หรือเบราว์เซอร์นี้เปิดเข้าบ้านอื่นในอีกแท็บ (1 เครื่องอยู่ได้ 1 บ้าน)
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', alignItems: 'center' }}>
+              <button className="lh-sign" onClick={() => setRejoinTick(t => t + 1)}>เข้าบ้านที่ {houseId} อีกครั้ง</button>
+              <a href={`/join/${sessionId || 'LITTLEHOOD'}`} className="lh-sign lh-sign--quiet" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>เลือกบ้านใหม่</a>
+            </div>
+          </Card>
+        </div>
+      </ForestScene>
+    );
+  }
 
   const handleSubmit = (key: string) => {
     if (session.state !== 'QUESTION_OPEN' || house.hasSubmitted) return;
