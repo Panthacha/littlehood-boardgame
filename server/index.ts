@@ -60,14 +60,14 @@ io.on('connection', (socket) => {
      });
   }
 
-  socket.on('joinLobby', ({ eventSlug, houseId, deviceId }, callback) => {
+  socket.on('joinLobby', ({ eventSlug, houseId, deviceId, card }, callback) => {
     const slug = eventSlug || DEFAULT_EVENT_SLUG;
 
-    const house = joinHouse(slug, socket.id, houseId, deviceId);
+    const house = joinHouse(slug, socket.id, houseId, deviceId, card);
     if (!house) {
       return callback({ error: 'Invalid house ID' });
     }
-    if (house === 'TAKEN' || house === 'ALREADY_IN_OTHER_HOUSE') {
+    if (house === 'TAKEN' || house === 'ALREADY_IN_OTHER_HOUSE' || house === 'CARD_USED') {
       return callback({ error: house, mine: deviceId ? houseOwnedBy(slug, deviceId) : null });
     }
 

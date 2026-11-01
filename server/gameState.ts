@@ -1,4 +1,14 @@
-import { Session, HouseData, Player, GameState, NightEvent } from './types';
+import { Session, HouseData, Player, GameState, NightEvent, Role } from './types';
+
+// Character printed on each card; the card's QR link is /join/<slug>?house=<card>.
+export const CARD_ROLES: Record<number, Role> = {
+  1: 'RED_RIDING_HOOD',
+  2: 'WOLF',
+  3: 'GRANDMA',
+  4: 'WOODCUTTER',
+  5: 'HUNTER',
+  6: 'WITCH'
+};
 import { questions } from './data';
 
 export const DEFAULT_EVENT_SLUG = 'LITTLEHOOD'; // matches the slug already baked into the printed QR codes (see generate_qrs.js)
@@ -70,27 +80,33 @@ export const initializeNightMode = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
   currentSession.state = 'NIGHT_MODE';
   currentSession.awakeHouseId = null;
 
-  // Fixed house -> role mapping, matching the printed QR cards and
-  // constants/characters.ts (house 1 = Red Riding Hood, 2 = Wolf, etc).
-  // The "who got the wolf card" randomness already comes from the teacher
-  // handing out physical cards to groups fresh each session — shuffling
-  // again here just made the in-game role stop matching the card.
-  const roles: import('./types').Role[] = [
-    'RED_RIDING_HOOD', // house 1
-    'WOLF',            // house 2
-    'GRANDMA',         // house 3
-    'WOODCUTTER',      // house 4
-    'HUNTER',          // house 5
-    'WITCH'            // house 6
-  ];
+  // Roles come from the physical character cards, not the house number:
+  // each card's QR link carries its character (?house=1..6 on the printed
+  // cards means card 1..6, see CARD_ROLES), and the house is picked
+  // separately on the join page. A role is fixed the first night and kept
+  // for all 5 nights. Houses that joined without a card get the roles no
+  // card claimed, in card order, so every night still has all 6 roles.
+  const firstNight = Object.values(currentSession.houses).every(h => h.role === undefined);
+  const roleOf: Record<number, Role> = {};
+  if (firstNight) {
+    const used = new Set<Role>();
+    for (let i = 1; i <= 6; i++) {
+      const r = currentSession.houses[i].cardRole;
+      if (r && !used.has(r)) { roleOf[i] = r; used.add(r); }
+    }
+    const leftover = Object.values(CARD_ROLES).filter(r => !used.has(r));
+    for (let i = 1; i <= 6; i++) if (!roleOf[i]) roleOf[i] = leftover.shift()!;
+  } else {
+    for (let i = 1; i <= 6; i++) roleOf[i] = currentSession.houses[i].role!;
+  }
 
   // Find wolf house ID for woodcutter
-  let wolfHouseId = 1;
+  let wolfHouseId = 2;
   let previousSuspects: number[] | undefined;
 
   // Assign roles
   for (let i = 1; i <= 6; i++) {
-    const role = roles[i - 1];
+    const role = roleOf[i];
     if (role === 'WOLF') wolfHouseId = i;
 
     const house = currentSession.houses[i];
@@ -170,10 +186,11 @@ export const releaseHouse = (eventSlug: string, houseId: number) => {
   if (!house) return;
   house.claimed = false;
   house.players = [];
+  if (house.role === undefined) house.cardRole = undefined;
   house.isOnline = false;
 };
 
-export const joinHouse = (eventSlug: string, socketId: string, houseId: number, deviceId?: string): HouseData | 'TAKEN' | 'ALREADY_IN_OTHER_HOUSE' | null => {
+export const joinHouse = (eventSlug: string, socketId: string, houseId: number, deviceId?: string, card?: number): HouseData | 'TAKEN' | 'ALREADY_IN_OTHER_HOUSE' | 'CARD_USED' | null => {
   if (houseId < 1 || houseId > 6) return null;
   const claims = claimsFor(getSession(eventSlug));
   const device = deviceId || `socket:${socketId}`; // old clients without an id
@@ -186,10 +203,16 @@ export const joinHouse = (eventSlug: string, socketId: string, houseId: number, 
     if (currentSession.state !== 'LOBBY') return 'ALREADY_IN_OTHER_HOUSE';
     releaseHouse(eventSlug, otherHouse);
   }
+  const cardRole = card ? CARD_ROLES[card] : undefined;
+  if (cardRole && Object.values(currentSession.houses).some(h => h.houseId !== houseId && h.cardRole === cardRole)) {
+    return 'CARD_USED';
+  }
   claims.set(houseId, device);
   const house = currentSession.houses[houseId];
   if (!house) return null;
   house.claimed = true;
+  // Roles lock in on the first night; a card scanned after that changes nothing.
+  if (cardRole && house.role === undefined) house.cardRole = cardRole;
 
   // Check if player already in this house
   const existingPlayer = house.players.find(p => p.socketId === socketId);

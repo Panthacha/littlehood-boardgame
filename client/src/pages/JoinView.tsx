@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { ForestScene } from '../theme/Forest';
 import { getDeviceId } from '../utils/deviceId';
@@ -7,6 +7,12 @@ import { getDeviceId } from '../utils/deviceId';
 const JoinView: React.FC = () => {
   const { eventSlug } = useParams<{ eventSlug: string }>();
   const navigate = useNavigate();
+  // The printed character cards' QR links end in ?house=1..6 — that number is
+  // the CARD (character), not the house; the house is picked below. It's
+  // passed along so the night round gives this house the card's role.
+  const [searchParams] = useSearchParams();
+  const cardParam = parseInt(searchParams.get('house') || searchParams.get('card') || '', 10);
+  const card = cardParam >= 1 && cardParam <= 6 ? cardParam : undefined;
   const { socket, connected, session } = useSocket();
 
   const [selectedHouse, setSelectedHouse] = useState<number | null>(null);
@@ -42,17 +48,19 @@ const JoinView: React.FC = () => {
     setEntering(true);
     setError('');
     // Claim the house now so two phones tapping at once can't both get it.
-    socket.emit('joinLobby', { eventSlug: eventSlug || '', houseId: selectedHouse, deviceId: getDeviceId() }, (res: any) => {
+    socket.emit('joinLobby', { eventSlug: eventSlug || '', houseId: selectedHouse, deviceId: getDeviceId(), card }, (res: any) => {
       if (res?.error) {
         setEntering(false);
         setSelectedHouse(null);
         setError(res.error === 'ALREADY_IN_OTHER_HOUSE'
           ? `เครื่องนี้อยู่บ้านที่ ${res.mine} แล้ว เกมเริ่มแล้วจึงย้ายบ้านไม่ได้ ถ้าต้องการย้ายให้ผู้สอนช่วย`
-          : 'บ้านนี้มีคนเข้าไปแล้ว เลือกบ้านอื่นนะ');
+          : res.error === 'CARD_USED'
+            ? 'การ์ดใบนี้ถูกสแกนเข้าบ้านอื่นไปแล้ว ตรวจสอบการ์ดกับผู้สอนอีกครั้ง'
+            : 'บ้านนี้มีคนเข้าไปแล้ว เลือกบ้านอื่นนะ');
         return;
       }
       // short beat so the lit-up house is seen before the page changes
-      setTimeout(() => navigate(`/play/${eventSlug}?house=${selectedHouse}`), 450);
+      setTimeout(() => navigate(`/play/${eventSlug}?house=${selectedHouse}${card ? `&card=${card}` : ''}`), 450);
     });
   };
 
