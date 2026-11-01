@@ -16,10 +16,11 @@ interface Part2Data {
 const EMPTY: Part2Data = { quizPicked: null, cardScene: '', cardProblem: '', cardConnection: '', charName: '', traits: [], stance: null, story: '' };
 const LAST = 5;
 
+// Character cards: /characters/<id>.webp, from the artwork in "charactor/".
 const REF_CHARACTERS = [
-  { label: 'หนูน้อยหมวกแดง', mono: 'หม', bg: '#9D3543' },
-  { label: 'คุณยาย', mono: 'คย', bg: '#2D5A27' },
-  { label: 'หมาป่า', mono: 'หป', bg: '#3A3A3A' }
+  { id: 'hood', label: 'หนูน้อยหมวกแดง' },
+  { id: 'grandma', label: 'คุณยาย' },
+  { id: 'wolf', label: 'หมาป่า' }
 ];
 
 const Part2: React.FC<{ houseId: number }> = ({ houseId }) => {
@@ -40,11 +41,11 @@ const Part2: React.FC<{ houseId: number }> = ({ houseId }) => {
         <Section title="ทีมพิสูจน์ตัวแล้วที่ห้องแล็บ 🔬">
           {gameName && <Box highlight>เกมของทีมคุณจาก Part 1: <strong>{gameName}</strong></Box>}
           <Note>ตอนนี้ถึงเวลาเข้าป่าจริง — ในป่าแห่งนี้มีตัวละครหลัก 3 ตัวที่ล็อกไว้แล้ว ใช้เป็นแนวทางก่อนออกแบบตัวละครเสริมของทีมคุณเอง</Note>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '10px' }}>
             {REF_CHARACTERS.map((c) => (
-              <div key={c.label} style={{ background: 'rgba(122,85,48,0.1)', border: '1px solid rgba(122,85,48,0.25)', borderRadius: '16px', padding: '14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cinzel', serif", fontWeight: 'bold' }}>{c.mono}</div>
-                <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{c.label}</div>
+              <div key={c.label} className="lh-rise" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
+                <img src={`/characters/${c.id}.webp`} alt={c.label} style={{ width: '100%', aspectRatio: '1055 / 1491', objectFit: 'cover', borderRadius: '8px', boxShadow: '0 6px 14px rgba(60,30,10,0.45)' }} />
+                <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{c.label}</div>
               </div>
             ))}
           </div>
