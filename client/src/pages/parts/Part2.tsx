@@ -1,11 +1,14 @@
 import React from 'react';
-import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Chips, Pills, CountdownTimer, SummaryCard, DoneScreen, Loading, labelOf, toggleIn } from './kit';
-import { PART_QUIZZES, TRAITS, STANCES } from './content';
+import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Chips, Pills, SummaryCard, DoneScreen, Loading, labelOf, toggleIn } from './kit';
+import { PART_QUIZZES, TRAITS, STANCES, CHARACTER_CARDS, SETTING_CARDS, PROBLEM_CARDS } from './content';
+import { useSocket } from '../../context/SocketContext';
+import { Deck, dealFor } from './CardDraw';
 
 interface Part2Data {
   quizPicked: string | null;
-  cardScene: string;
-  cardProblem: string;
+  drawnCharacter: string; // Character card drawn on screen
+  cardScene: string; // Setting card drawn on screen
+  cardProblem: string; // Problem card drawn on screen
   cardConnection: string;
   charName: string;
   traits: string[];
@@ -13,7 +16,7 @@ interface Part2Data {
   story: string;
 }
 
-const EMPTY: Part2Data = { quizPicked: null, cardScene: '', cardProblem: '', cardConnection: '', charName: '', traits: [], stance: null, story: '' };
+const EMPTY: Part2Data = { quizPicked: null, drawnCharacter: '', cardScene: '', cardProblem: '', cardConnection: '', charName: '', traits: [], stance: null, story: '' };
 const LAST = 5;
 
 // Character cards: /characters/<id>.webp, from the artwork in "charactor/".
@@ -24,13 +27,22 @@ const REF_CHARACTERS = [
 ];
 
 const Part2: React.FC<{ houseId: number }> = ({ houseId }) => {
+  const { session } = useSocket();
   const { loaded, step, data, update, goStep, allParts } = usePartProgress<Part2Data>(houseId, 2, EMPTY, LAST);
   if (!loaded) return <Loading />;
 
   const gameName = allParts[1]?.data?.gameName;
   let canAdvance = true;
   if (step === 1) canAdvance = !!data.quizPicked;
-  if (step === 3) canAdvance = !!(data.cardScene.trim() && data.cardProblem.trim() && data.cardConnection.trim());
+  if (step === 2) canAdvance = !!(data.drawnCharacter && data.cardScene && data.cardProblem);
+  if (step === 3) canAdvance = !!data.cardConnection.trim();
+
+  // Each game deals the decks differently; each house gets its own cards.
+  const seed = session?.id || 'littlehood';
+  const characterCard = dealFor(CHARACTER_CARDS, `${seed}:character`, houseId);
+  const settingCard = dealFor(SETTING_CARDS, `${seed}:setting`, houseId);
+  const problemCard = dealFor(PROBLEM_CARDS, `${seed}:problem`, houseId);
+  const descOf = (deck: { title: string; desc: string }[], title: string) => deck.find(c => c.title === title)?.desc;
   if (step === 4) canAdvance = !!(data.charName.trim() && data.traits.length && data.stance && data.story.trim());
 
   return (
@@ -69,21 +81,26 @@ const Part2: React.FC<{ houseId: number }> = ({ houseId }) => {
 
       {step === 2 && (
         <Section title="ด่านที่ 2 — จั่วการ์ด Character / Setting / Problem">
-          <Box>
-            <div>1. หยิบการ์ด 1 ใบจากกอง <strong>Character</strong></div>
-            <div>2. หยิบการ์ด 1 ใบจากกอง <strong>Setting</strong></div>
-            <div>3. หยิบการ์ด 1 ใบจากกอง <strong>Problem</strong></div>
-            <div style={{ fontSize: '13px', opacity: 0.7 }}>คุยกันในทีมว่าจะเอา 3 อย่างนี้มาผสมกันเป็นตัวละครเสริมยังไง — เมื่อพร้อมแล้วกดเริ่มจับเวลา</div>
-          </Box>
-          <CountdownTimer seconds={180} doneText="หมดเวลา! สรุปผลกันในทีมแล้วไปขั้นต่อไปได้เลย" />
+          <Note>สับไพ่ทั้ง 3 กอง แล้วเลือกมากองละ 1 ใบ — แต่ละบ้านจะได้การ์ดไม่ซ้ำกัน</Note>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px' }}>
+            <Deck label="ตัวละคร" color="#8A5A1E" dark="#4E3210" dealt={characterCard} drawn={data.drawnCharacter || null}
+              onDraw={(t) => update({ drawnCharacter: t })} />
+            <Deck label="สถานที่" color="#2F6B3A" dark="#163A1C" dealt={settingCard} drawn={data.cardScene || null}
+              onDraw={(t) => update({ cardScene: t })} />
+            <Deck label="ปัญหา" color="#8E1B2C" dark="#5A0E1A" dealt={problemCard} drawn={data.cardProblem || null}
+              onDraw={(t) => update({ cardProblem: t })} />
+          </div>
         </Section>
       )}
 
       {step === 3 && (
-        <Section title="ด่านที่ 3 — สรุปผลจากการ์ด">
-          <Field label="ฉาก/สถานที่ของตัวละครเสริม" value={data.cardScene} onChange={(v) => update({ cardScene: v })} placeholder="เช่น กระท่อมเก่าริมลำธาร" />
-          <Field label="ปัญหา/สถานการณ์ที่ตัวละครเผชิญ" value={data.cardProblem} onChange={(v) => update({ cardProblem: v })} placeholder="เช่น หลงทางและหาทางกลับบ้านไม่เจอ" />
-          <Field label="เกี่ยวข้องกับโลกหนูน้อยหมวกแดงยังไง" value={data.cardConnection} onChange={(v) => update({ cardConnection: v })} placeholder="เช่น อยู่ฝั่งตะวันออกของป่า ใกล้บ้านคุณยาย" />
+        <Section title="ด่านที่ 3 — ผสมการ์ดเป็นตัวละครเสริม">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' }}>
+            <Box><div style={{ fontSize: '12px', fontWeight: 700, color: '#8A5A1E' }}>ตัวละคร</div><div className="lh-display" style={{ fontSize: '16px' }}>{data.drawnCharacter}</div><div style={{ fontSize: '12px', color: 'var(--lh-ink-soft)' }}>{descOf(CHARACTER_CARDS, data.drawnCharacter)}</div></Box>
+            <Box><div style={{ fontSize: '12px', fontWeight: 700, color: '#2F6B3A' }}>สถานที่</div><div className="lh-display" style={{ fontSize: '16px' }}>{data.cardScene}</div><div style={{ fontSize: '12px', color: 'var(--lh-ink-soft)' }}>{descOf(SETTING_CARDS, data.cardScene)}</div></Box>
+            <Box><div style={{ fontSize: '12px', fontWeight: 700, color: '#8E1B2C' }}>ปัญหา</div><div className="lh-display" style={{ fontSize: '16px' }}>{data.cardProblem}</div><div style={{ fontSize: '12px', color: 'var(--lh-ink-soft)' }}>{descOf(PROBLEM_CARDS, data.cardProblem)}</div></Box>
+          </div>
+          <Field multiline label="ตัวละครนี้เกี่ยวข้องกับโลกหนูน้อยหมวกแดงยังไง" value={data.cardConnection} onChange={(v) => update({ cardConnection: v })} placeholder="เช่น อยู่ฝั่งตะวันออกของป่า ใกล้บ้านคุณยาย และเคยช่วยหนูน้อยหาทางกลับบ้าน" />
         </Section>
       )}
 
@@ -102,7 +119,7 @@ const Part2: React.FC<{ houseId: number }> = ({ houseId }) => {
             ['ชื่อตัวละคร', data.charName],
             ['นิสัย', data.traits.join(', ')],
             ['จุดยืน', labelOf(STANCES, data.stance)],
-            ['ฉาก / ปัญหา', `${data.cardScene} / ${data.cardProblem}`],
+            ['การ์ดที่จั่ว', `${data.drawnCharacter} · ${data.cardScene} · ${data.cardProblem}`],
             ['เรื่องราว', data.story]
           ]} />
         </DoneScreen>
