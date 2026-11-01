@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { nightNews, gameOutcome } from '../utils/nightRecap';
+import { houseSummaries, classSummary } from '../utils/finalSummary';
 import { AdminSettingsButton } from '../components/AdminSettingsButton';
 import { AdminControlModal } from '../components/AdminControlModal';
 import type { HouseData, Question } from '../types';
@@ -247,7 +248,9 @@ const HostView: React.FC = () => {
             </div>
           )}
 
-          {sign(<>เข้าสู่คืนที่ {partNum} 🌙</>, () => socket?.emit('hostStartNightMode'), 'lh-sign--night')}
+          {partNum < 5
+            ? sign(<>เข้าสู่คืนที่ {partNum} 🌙</>, () => socket?.emit('hostStartNightMode'), 'lh-sign--night')
+            : sign('เริ่ม Posttest 📝', () => socket?.emit('hostFinishParts'), 'lh-sign--hood lh-glow-pulse')}
         </div>
       );
     }
@@ -255,7 +258,7 @@ const HostView: React.FC = () => {
     if (session.state === 'NIGHT_MODE') {
       const awakeId = session.awakeHouseId ?? null;
       const completedPart = session.lastCompletedPart || 1;
-      const isLastRound = completedPart === 5;
+
       return (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '78vh', paddingTop: '22vh', gap: '18px', textAlign: 'center' }}>
           {awakeId ? (
@@ -272,7 +275,7 @@ const HostView: React.FC = () => {
             </>
           )}
           <div style={{ flex: 1 }} />
-          {sign(isLastRound ? 'เริ่ม Posttest 📝' : `ถัดไป: Part ${completedPart + 1} →`, () => isLastRound ? socket?.emit('hostFinishParts') : socket?.emit('hostStartPart', completedPart + 1), 'lh-sign--night')}
+          {sign(`ถัดไป: Part ${completedPart + 1} →`, () => socket?.emit('hostStartPart', completedPart + 1), 'lh-sign--night')}
         </div>
       );
     }
@@ -295,32 +298,77 @@ const HostView: React.FC = () => {
               </div>
             </div>
           )}
-          <div className="lh-parchment lh-flip" style={pageCard}>
-            <div className="lh-kicker" style={{ textAlign: 'center' }}>จบการเดินทาง</div>
-            <h2 className="lh-display" style={{ fontSize: '42px', textAlign: 'center', margin: '6px 0 26px' }}>อันดับหมู่บ้านทั้งหมด</h2>
-            <Ledger houses={Object.values(session.houses)} showPost />
-          </div>
           {(() => {
-            const joined = Object.values(session.houses).filter(h => h.isOnline);
-            const pre = joined.reduce((a, h) => a + h.correctAnswers, 0);
-            const post = joined.reduce((a, h) => a + (h.postCorrectAnswers || 0), 0);
-            const max = joined.length * 5 || 1;
-            return (
-              <div className="lh-parchment lh-rise" style={{ ...pageCard, animationDelay: '0.3s', textAlign: 'center' }}>
-                <h3 className="lh-display" style={{ fontSize: '28px', marginBottom: '14px' }}>ความรู้ก่อน → หลังการเดินทาง</h3>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '36px' }}>
-                  <div><div className="lh-kicker">Pre-test</div><div style={{ fontFamily: "'Cinzel', serif", fontSize: '46px', fontWeight: 700 }}>{Math.round((pre / max) * 100)}%</div></div>
-                  <div style={{ fontSize: '40px', color: 'var(--lh-ink-soft)' }}>→</div>
-                  <div><div className="lh-kicker">Posttest</div><div className="lh-pop" style={{ fontFamily: "'Cinzel', serif", fontSize: '46px', fontWeight: 700, color: post >= pre ? '#2F6B3A' : 'var(--lh-hood)' }}>{Math.round((post / max) * 100)}%</div></div>
-                </div>
-                <p style={{ marginTop: '8px', color: 'var(--lh-ink-soft)' }}>ตอบถูกรวมทุกบ้าน: {pre} → {post} จาก {joined.length * 5} ข้อ</p>
+            const rows = houseSummaries(session);
+            const cls = classSummary(rows);
+            const tile = (label: string, value: React.ReactNode, sub: React.ReactNode, delay: number) => (
+              <div className="lh-parchment lh-rise" style={{ padding: '20px 18px', textAlign: 'center', animationDelay: `${delay}s` }}>
+                <div className="lh-kicker">{label}</div>
+                <div style={{ fontFamily: "'Cinzel', serif", fontSize: '44px', fontWeight: 700, lineHeight: 1.1, margin: '6px 0' }}>{value}</div>
+                <div style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>{sub}</div>
               </div>
+            );
+            const bar = (label: string, value: number, color: string, extra?: React.ReactNode) => (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--lh-ink-soft)' }}>{label}</span><span>{extra ?? `${value}%`}</span>
+                </div>
+                <div style={{ height: '8px', borderRadius: '999px', background: 'rgba(122,85,48,0.15)', overflow: 'hidden', marginTop: '3px' }}>
+                  <div style={{ height: '100%', width: `${value}%`, background: color, transition: 'width 1.2s ease' }} />
+                </div>
+              </div>
+            );
+            return (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', width: '100%', maxWidth: '1100px' }}>
+                  {tile('คะแนนการเดินทางเฉลี่ย', `${cls.journeyPct}%`, 'ความรู้ 40% · ภารกิจ 40% · การอยู่รอด 20%', 0.2)}
+                  {tile('ความรู้ทั้งห้อง', <>{cls.prePct}% <span style={{ fontSize: '28px', color: 'var(--lh-ink-soft)' }}>→</span> <span style={{ color: cls.postPct >= cls.prePct ? '#2F6B3A' : 'var(--lh-hood)' }}>{cls.postPct}%</span></>, 'Pre-test → Posttest', 0.3)}
+                  {tile('ภารกิจสำเร็จ', `${cls.missionPct}%`, 'Part 1–5 ที่ทำเสร็จ', 0.4)}
+                  {tile('บ้านที่รอด', `${cls.survived}/${cls.houses}`, `${cls.survivedPct}% ผ่าน 4 คืนมาได้`, 0.5)}
+                </div>
+
+                <div className="lh-parchment lh-flip" style={pageCard}>
+                  <div className="lh-kicker" style={{ textAlign: 'center' }}>จบการเดินทาง</div>
+                  <h2 className="lh-display" style={{ fontSize: '40px', textAlign: 'center', margin: '6px 0 24px' }}>สรุปผลรายบ้าน</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '18px' }}>
+                    {rows.map((r, i) => {
+                      const ring = r.status === 'down' ? 'var(--lh-hood)' : r.rank === 1 ? '#B07A1E' : '#2F6B3A';
+                      return (
+                        <div key={r.houseId} className="lh-ledger-row" style={{ animationDelay: `${0.12 * i}s`, position: 'relative', padding: '16px 18px', borderRadius: '10px', background: r.rank === 1 ? 'rgba(224,184,102,0.22)' : 'rgba(255,250,238,0.55)', border: `2px solid ${r.rank === 1 ? '#B07A1E' : 'rgba(122,85,48,0.3)'}`, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span className={r.rank === 1 ? 'lh-seal' : ''} style={{ width: '36px', height: '36px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '18px', color: r.rank === 1 ? '#F6D9C0' : 'var(--lh-ink-soft)' }}>{r.rank}</span>
+                            <img src={`/houses/${r.houseId}.png`} alt="" style={{ width: '74px', margin: '-12px 0 -16px', filter: r.status === 'down' ? 'grayscale(1) brightness(0.55)' : 'drop-shadow(0 6px 6px rgba(0,0,0,0.35))' }} />
+                            <div className="lh-display" style={{ flex: 1, minWidth: 0, fontSize: '22px', whiteSpace: 'nowrap' }}>บ้านที่ {r.houseId}</div>
+                            {/* journey % ring */}
+                            <div style={{ width: '64px', height: '64px', borderRadius: '50%', flexShrink: 0, background: `conic-gradient(${ring} ${r.journeyPct * 3.6}deg, rgba(122,85,48,0.18) 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: 'var(--lh-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '16px' }}>{r.journeyPct}%</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                            <span className="lh-stamp lh-display" style={{ padding: '1px 10px', borderRadius: '6px', fontSize: '15px', whiteSpace: 'nowrap', border: `2px double ${r.status === 'down' ? 'var(--lh-hood)' : r.status === 'injured' ? '#B07A1E' : '#2F6B3A'}`, color: r.status === 'down' ? 'var(--lh-hood)' : r.status === 'injured' ? '#8A5A1E' : '#2F6B3A', animationDelay: `${0.3 + 0.12 * i}s` }}>
+                              {r.status === 'down' ? '☠️ ' : r.status === 'injured' ? '❤️‍🩹 ' : '❤️ '}{r.statusLabel}
+                            </span>
+                            {r.roleName && <span style={{ fontSize: '14px', color: 'var(--lh-ink-soft)', whiteSpace: 'nowrap' }}>บทบาท: <strong style={{ color: 'var(--lh-ink)' }}>{r.roleName}</strong></span>}
+                          </div>
+                          {bar('ความรู้ (Pre → Post)', r.postPct, '#2C4F8A', <>{r.prePct}% → <strong style={{ color: r.postPct >= r.prePct ? '#2F6B3A' : 'var(--lh-hood)' }}>{r.postPct}%</strong></>)}
+                          {bar('ภารกิจ Part 1–5', r.missionPct, '#2F6B3A', `${r.missionsDone}/5`)}
+                          {bar('การอยู่รอด', r.survivalPct, r.status === 'down' ? '#A8233A' : '#B07A1E')}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: 'var(--lh-ink-soft)', borderTop: '1px dashed rgba(122,85,48,0.35)', paddingTop: '8px' }}>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span className="lh-coin" style={{ width: '16px', height: '16px' }} /><strong style={{ color: 'var(--lh-ink)', fontSize: '15px' }}>{r.house.score}</strong> เหรียญ</span>
+                            <span>ถูกโจมตี {r.attacked} · ถูกกันไว้ {r.saved} · ถูกขโมย {r.stolenFrom}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
             );
           })()}
           <div className="lh-parchment lh-rise" style={{ ...pageCard, animationDelay: '0.6s' }}>
-            <h3 className="lh-display" style={{ fontSize: '30px', textAlign: 'center', marginBottom: '16px' }}>เรื่องราวตลอด 5 คืน</h3>
+            <h3 className="lh-display" style={{ fontSize: '30px', textAlign: 'center', marginBottom: '16px' }}>เรื่องราวตลอด 4 คืน</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '14px' }}>
-              {[1, 2, 3, 4, 5].map(n => (
+              {[1, 2, 3, 4].map(n => (
                 <div key={n} style={{ padding: '14px 18px', borderRadius: '8px', background: 'rgba(122,85,48,0.1)', border: '1px dashed rgba(122,85,48,0.45)' }}>
                   <div className="lh-display" style={{ fontSize: '18px', color: 'var(--lh-hood)', marginBottom: '6px' }}>คืนที่ {n} <span style={{ fontFamily: 'inherit', fontSize: '14px', color: 'var(--lh-ink-soft)' }}>· หลัง {PART_TITLES[n]}</span></div>
                   {nightNews(session, n).map((line, i) => <div key={i} style={{ fontSize: '16px', padding: '2px 0' }}>{line}</div>)}

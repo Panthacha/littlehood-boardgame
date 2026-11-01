@@ -39,7 +39,7 @@ export const describeEvent = (e: NightEvent): string =>
   `บ้าน ${e.actorHouseId} (${ROLE_NAMES[e.actorRole]}) ${EFFECT_TEXT[e.effect]}${e.targetHouseId ? ` → บ้าน ${e.targetHouseId}` : ''}`;
 
 // Who won the werewolf side of the game: villagers win if the wolf's house
-// was knocked out (2 injuries) within the 5 nights, otherwise the wolf wins.
+// was knocked out (2 injuries) within the 4 nights, otherwise the wolf wins.
 // null until roles exist (night mode never played).
 export interface GameOutcome { villagersWin: boolean; wolfHouseId: number; title: string; story: string }
 
@@ -55,6 +55,6 @@ export const gameOutcome = (session: Session): GameOutcome | null => {
     : {
         villagersWin: false, wolfHouseId: wolf.houseId,
         title: 'หมาป่าครองผืนป่า…',
-        story: 'เสียงหอนดังก้องไปทั่วป่า หมาป่าซ่อนตัวรอดมาได้ตลอด 5 คืน คราวหน้าชาวบ้านต้องสังเกตเบาะแสให้ดีกว่านี้'
+        story: 'เสียงหอนดังก้องไปทั่วป่า หมาป่าซ่อนตัวรอดมาได้ตลอด 4 คืน คราวหน้าชาวบ้านต้องสังเกตเบาะแสให้ดีกว่านี้'
       };
 };

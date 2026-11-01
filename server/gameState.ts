@@ -66,9 +66,9 @@ export const resetSession = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
   return session;
 };
 
-// Night Mode now runs once after EVERY Part (5 rounds total across one
+// Night Mode runs once after each of Parts 1-4 (4 rounds across one
 // session), not just once at the end — matching Claude.pdf's "one night per
-// chapter" design. Role stays fixed per house across all 5 rounds (same
+// chapter" design. Role stays fixed per house across all 4 rounds (same
 // deterministic mapping every call); isProtected/usedNightSkill reset each
 // round so everyone gets a fresh action, but score/injuries/isDead, the
 // Woodcutter's narrowing suspect list and session.nightLog carry over and
@@ -84,7 +84,7 @@ export const initializeNightMode = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
   // each card's QR link carries its character (?house=1..6 on the printed
   // cards means card 1..6, see CARD_ROLES), and the house is picked
   // separately on the join page. A role is fixed the first night and kept
-  // for all 5 nights. Houses that joined without a card get the roles no
+  // for all 4 nights. Houses that joined without a card get the roles no
   // card claimed, in card order, so every night still has all 6 roles.
   const firstNight = Object.values(currentSession.houses).every(h => h.role === undefined);
   const roleOf: Record<number, Role> = {};
@@ -127,7 +127,7 @@ export const initializeNightMode = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
   }
 
   // Woodcutter's suspects carry over and narrow night after night, so the
-  // investigation builds across the 5 nights instead of restarting: night 1
+  // investigation builds across the 4 nights instead of restarting: night 1
   // gets 3 suspects (always incl. the wolf), each later night drops one
   // innocent from the previous list until only 2 remain.
   let woodcutterResult: number[];

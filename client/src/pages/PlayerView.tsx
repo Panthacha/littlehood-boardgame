@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { nightNews, gameOutcome } from '../utils/nightRecap';
+import { houseSummaries } from '../utils/finalSummary';
 import { ForestScene } from '../theme/Forest';
 import { getDeviceId } from '../utils/deviceId';
 import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
@@ -553,9 +554,11 @@ const PlayerView: React.FC = () => {
         const outcome = gameOutcome(session);
         const isWolf = house.role === 'WOLF';
         const won = outcome ? (isWolf ? !outcome.villagersWin : outcome.villagersWin) : null;
+        const allRows = houseSummaries(session);
+        const me = allRows.find(r => r.houseId === houseId);
         return (
           <Card>
-            <img src={`/houses/${houseId}.png`} alt="" className="lh-house is-lit" style={{ width: '200px', margin: '-34px auto -44px' }} />
+            <img src={`/houses/${houseId}.png`} alt="" className={`lh-house ${house.isDead ? 'is-dark' : 'is-lit'}`} style={{ width: '200px', margin: '-34px auto -44px' }} />
             {kicker(outcome ? (outcome.villagersWin ? 'ชาวบ้านชนะ' : 'หมาป่าชนะ') : 'ภารกิจเสร็จสิ้น')}
             {title(outcome ? outcome.title : 'ขอบคุณที่ร่วมออกเดินทาง')}
             {outcome && (
@@ -567,10 +570,36 @@ const PlayerView: React.FC = () => {
                 <p style={{ fontSize: '14px', color: 'var(--lh-ink-soft)' }}>หมาป่าคือบ้านที่ {outcome.wolfHouseId}</p>
               </>
             )}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', margin: '10px 0 16px' }}>
-              <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>เหรียญรวม</div><div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}><span className="lh-coin" /><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.score}</strong></div></div>
-              <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>Pre → Post</div><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.correctAnswers} → {house.postCorrectAnswers || 0}</strong><span style={{ fontSize: '14px' }}> /5</span></div>
-            </div>
+            {me && (
+              <div style={{ textAlign: 'left', margin: '14px 0 8px', padding: '14px 16px', borderRadius: '10px', background: 'rgba(255,250,238,0.55)', border: '1px solid rgba(122,85,48,0.3)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                  <div>
+                    <div className="lh-kicker">สรุปบ้านที่ {houseId} · อันดับ {me.rank}/{allRows.length}</div>
+                    <div className="lh-display" style={{ fontSize: '17px', color: me.status === 'down' ? 'var(--lh-hood)' : me.status === 'injured' ? '#8A5A1E' : '#2F6B3A' }}>
+                      {me.status === 'down' ? '☠️ ' : me.status === 'injured' ? '❤️‍🩹 ' : '❤️ '}{me.statusLabel}
+                    </div>
+                  </div>
+                  <div style={{ width: '62px', height: '62px', borderRadius: '50%', flexShrink: 0, background: `conic-gradient(#2F6B3A ${me.journeyPct * 3.6}deg, rgba(122,85,48,0.18) 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--lh-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '15px' }}>{me.journeyPct}%</div>
+                  </div>
+                </div>
+                {[
+                  ['ความรู้ Pre → Post', me.postPct, `${me.prePct}% → ${me.postPct}%`, '#2C4F8A'],
+                  ['ภารกิจ Part 1–5', me.missionPct, `${me.missionsDone}/5`, '#2F6B3A'],
+                  ['การอยู่รอด', me.survivalPct, `${me.survivalPct}%`, me.status === 'down' ? '#A8233A' : '#B07A1E']
+                ].map(([label, value, text, color]) => (
+                  <div key={label as string}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700 }}><span style={{ color: 'var(--lh-ink-soft)' }}>{label}</span><span>{text}</span></div>
+                    <div style={{ height: '8px', borderRadius: '999px', background: 'rgba(122,85,48,0.15)', overflow: 'hidden', marginTop: '3px' }}><div style={{ height: '100%', width: `${value}%`, background: color as string }} /></div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--lh-ink-soft)', borderTop: '1px dashed rgba(122,85,48,0.35)', paddingTop: '8px' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span className="lh-coin" style={{ width: '16px', height: '16px' }} /><strong style={{ color: 'var(--lh-ink)' }}>{house.score}</strong> เหรียญ</span>
+                  <span>ถูกโจมตี {me.attacked} · กันไว้ {me.saved}</span>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--lh-ink-soft)' }}>คะแนนการเดินทาง = ความรู้ 40% + ภารกิจ 40% + การอยู่รอด 20%</div>
+              </div>
+            )}
             <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>ขอบคุณที่ร่วมออกเดินทาง</p>
           </Card>
         );

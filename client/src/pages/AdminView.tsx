@@ -108,7 +108,7 @@ const AdminView: React.FC = () => {
                 })}
                 <div style={{ gridColumn: '1 / -1', marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', color: '#ddd' }}>
                   <div style={{ fontWeight: 'bold', color: '#D9AE6E', marginBottom: '8px' }}>บันทึกทุกคืน (เห็นเฉพาะผู้สอน)</div>
-                  {[1, 2, 3, 4, 5].filter(n => n <= (session.lastCompletedPart || 1)).map(n => {
+                  {[1, 2, 3, 4].filter(n => n <= (session.lastCompletedPart || 1)).map(n => {
                     const events = (session.nightLog || []).filter(e => e.night === n);
                     return (
                       <div key={n} style={{ marginBottom: '8px' }}>
@@ -122,18 +122,17 @@ const AdminView: React.FC = () => {
                   <button
                     onClick={() => {
                       const done = session.lastCompletedPart || 1;
-                      if (done === 5) socket?.emit('hostFinishParts');
-                      else socket?.emit('hostStartPart', done + 1);
+                      socket?.emit('hostStartPart', done + 1);
                     }}
                     style={{ padding: '14px 32px', background: '#D9AE6E', color: '#1a1a1a', borderRadius: '12px', fontWeight: 'bold', fontSize: '18px', cursor: 'pointer', border: 'none' }}
                   >
-                    {(session.lastCompletedPart || 1) === 5 ? 'จบคืนสุดท้าย → เริ่ม Posttest 📝' : `จบคืนนี้ → ไป Part ${(session.lastCompletedPart || 1) + 1}`}
+                    {`จบคืนนี้ → ไป Part ${(session.lastCompletedPart || 1) + 1}`}
                   </button>
                 </div>
               </div>
             ) : (
               <p className="admin-status-text">
-                * โหมดกลางคืนจะเปิดอัตโนมัติหลังจบแต่ละ Part (กดปุ่ม "เข้าสู่คืนที่ N" บนจอใหญ่)
+                * โหมดกลางคืนเปิดหลังจบ Part 1–4 (กดปุ่ม "เข้าสู่คืนที่ N" บนจอใหญ่) — หลัง Part 5 ไป Posttest เลย
               </p>
             )}
           </div>

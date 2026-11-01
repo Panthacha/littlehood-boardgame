@@ -156,8 +156,8 @@ io.on('connection', (socket) => {
     startRound();
   });
 
-  // Sequence: MID_SCOREBOARD -> Part 1 -> night 1 -> Part 2 -> night 2 -> ...
-  // -> Part 5 -> night 5 -> Posttest -> FINISHED. A NIGHT_MODE round always follows the
+  // Sequence: MID_SCOREBOARD -> Part 1 -> night 1 -> ... -> Part 4 -> night 4
+  // -> Part 5 -> Posttest -> FINISHED. A NIGHT_MODE round always follows the
   // Part it's attached to (session.lastCompletedPart), never a standalone
   // bonus — see gameState.ts's initializeNightMode for why roles/injuries
   // persist across the 5 rounds instead of resetting each time.
@@ -173,10 +173,11 @@ io.on('connection', (socket) => {
     io.to(DEFAULT_EVENT_SLUG).emit('gameStateUpdate', getSession());
   });
 
-  // After night 5 -> Posttest (same 5 questions) -> FINISHED
+  // Part 5 -> Posttest (same 5 questions) -> FINISHED. There is no night
+  // after Part 5: the werewolf game runs 4 nights (after Parts 1-4).
   socket.on('hostFinishParts', () => {
     const session = getSession();
-    if (session.state !== 'NIGHT_MODE' || session.lastCompletedPart !== 5) return;
+    if (session.state !== 'PART_5') return;
     startPosttest();
     nextQuestion();
     startRound();
@@ -220,7 +221,7 @@ io.on('connection', (socket) => {
 
   socket.on('hostStartNightMode', () => {
     const session = getSession();
-    const match = session.state.match(/^PART_(\d)$/);
+    const match = session.state.match(/^PART_([1-4])$/); // no night after Part 5
     if (!match) return;
     session.lastCompletedPart = parseInt(match[1], 10);
     initializeNightMode();
