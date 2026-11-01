@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
-import { nightNews } from '../utils/nightRecap';
+import { nightNews, gameOutcome } from '../utils/nightRecap';
 import { ForestScene } from '../theme/Forest';
 import { getDeviceId } from '../utils/deviceId';
 import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
@@ -549,19 +549,32 @@ const PlayerView: React.FC = () => {
           </div>
         );
 
-      case 'FINISHED':
+      case 'FINISHED': {
+        const outcome = gameOutcome(session);
+        const isWolf = house.role === 'WOLF';
+        const won = outcome ? (isWolf ? !outcome.villagersWin : outcome.villagersWin) : null;
         return (
           <Card>
             <img src={`/houses/${houseId}.png`} alt="" className="lh-house is-lit" style={{ width: '200px', margin: '-34px auto -44px' }} />
-            {kicker('ภารกิจเสร็จสิ้น')}
-            {title('ขอบคุณที่ร่วมออกเดินทาง')}
+            {kicker(outcome ? (outcome.villagersWin ? 'ชาวบ้านชนะ' : 'หมาป่าชนะ') : 'ภารกิจเสร็จสิ้น')}
+            {title(outcome ? outcome.title : 'ขอบคุณที่ร่วมออกเดินทาง')}
+            {outcome && (
+              <>
+                <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)', lineHeight: 1.6, marginBottom: '10px' }}>{outcome.story}</p>
+                <div className="lh-stamp lh-display" style={{ display: 'inline-block', margin: '4px 0 6px', padding: '4px 16px', borderRadius: '8px', fontSize: '18px', border: `3px double ${won ? '#2F6B3A' : 'var(--lh-hood)'}`, color: won ? '#2F6B3A' : 'var(--lh-hood)' }}>
+                  {isWolf ? (won ? 'คุณคือหมาป่า — ชนะ!' : 'คุณคือหมาป่า — ถูกจับได้แล้ว') : (won ? 'ฝ่ายชาวบ้าน — ชนะ!' : 'ฝ่ายชาวบ้าน — แพ้')}
+                </div>
+                <p style={{ fontSize: '14px', color: 'var(--lh-ink-soft)' }}>หมาป่าคือบ้านที่ {outcome.wolfHouseId}</p>
+              </>
+            )}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', margin: '10px 0 16px' }}>
               <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>เหรียญรวม</div><div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}><span className="lh-coin" /><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.score}</strong></div></div>
               <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>Pre → Post</div><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.correctAnswers} → {house.postCorrectAnswers || 0}</strong><span style={{ fontSize: '14px' }}> /5</span></div>
             </div>
-            <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>รอผู้สอนประกาศผลบนจอใหญ่</p>
+            <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>ขอบคุณที่ร่วมออกเดินทาง</p>
           </Card>
         );
+      }
 
       default:
         return <div className="lh-display lh-breathe" style={{ color: 'var(--lh-gold-bright)', fontSize: '20px' }}>กำลังโหลด…</div>;

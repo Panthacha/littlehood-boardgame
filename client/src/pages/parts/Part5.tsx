@@ -136,7 +136,7 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
       {step === LAST && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', textAlign: 'center', padding: '12px 0' }}>
           <img src={`/houses/${houseId}.png`} alt="" className="lh-house is-lit" style={{ width: '180px', margin: '-24px 0 -36px' }} />
-          <h3 className="lh-display" style={{ margin: 0, fontSize: '22px' }}>ทีมพาคุณยายกลับบ้านปลอดภัยสำเร็จ!</h3>
+          <h3 className="lh-display" style={{ margin: 0, fontSize: '22px' }}>ทีมออกแบบเกมของตัวเองสำเร็จ!</h3>
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {bars.map((b) => (
               <div key={b.label} style={{ textAlign: 'left' }}>

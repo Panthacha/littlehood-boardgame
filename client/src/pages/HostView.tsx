@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
-import { nightNews } from '../utils/nightRecap';
+import { nightNews, gameOutcome } from '../utils/nightRecap';
 import { AdminSettingsButton } from '../components/AdminSettingsButton';
 import { AdminControlModal } from '../components/AdminControlModal';
 import type { HouseData, Question } from '../types';
@@ -276,8 +276,23 @@ const HostView: React.FC = () => {
     }
 
     if (session.state === 'FINISHED') {
+      const outcome = gameOutcome(session);
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', alignItems: 'center' }}>
+          {outcome && (
+            <div className="lh-rise" style={{ position: 'relative', width: '100%', maxWidth: '1100px', textAlign: 'center', padding: '34px 40px 30px' }}>
+              {outcome.villagersWin && <SparkleBurst style={{ left: '50%', top: '40px' }} />}
+              <div className="lh-kicker" style={{ color: outcome.villagersWin ? 'var(--lh-gold-bright)' : '#F4B3B3' }}>{outcome.villagersWin ? 'ชาวบ้านชนะ' : 'หมาป่าชนะ'}</div>
+              <h2 className="lh-display lh-title-in" style={{ fontSize: '68px', margin: '8px 0 12px', color: outcome.villagersWin ? 'var(--lh-gold-bright)' : '#FBE6D0', textShadow: outcome.villagersWin ? '0 0 40px rgba(243,213,138,0.7), 0 4px 0 rgba(0,0,0,0.6)' : '0 0 40px rgba(168,35,58,0.9), 0 4px 0 rgba(0,0,0,0.6)' }}>
+                {outcome.title}
+              </h2>
+              <p className="lh-rise" style={{ fontSize: '22px', color: 'var(--lh-cream)', textShadow: '0 1px 8px rgba(0,0,0,0.9)', maxWidth: '820px', margin: '0 auto', animationDelay: '1.2s' }}>{outcome.story}</p>
+              <div className="lh-rise" style={{ display: 'inline-flex', alignItems: 'center', gap: '14px', marginTop: '18px', animationDelay: '1.8s' }}>
+                <img src={`/houses/${outcome.wolfHouseId}.png`} alt="" className={`lh-house ${outcome.villagersWin ? 'is-dark' : 'is-lit'}`} style={{ width: '110px', margin: '-20px 0 -26px' }} />
+                <span className="lh-plaque" style={{ padding: '8px 18px' }}><span className="lh-display" style={{ fontSize: '20px' }}>หมาป่าคือบ้านที่ {outcome.wolfHouseId}</span></span>
+              </div>
+            </div>
+          )}
           <div className="lh-parchment lh-flip" style={pageCard}>
             <div className="lh-kicker" style={{ textAlign: 'center' }}>จบการเดินทาง</div>
             <h2 className="lh-display" style={{ fontSize: '42px', textAlign: 'center', margin: '6px 0 26px' }}>อันดับหมู่บ้านทั้งหมด</h2>
