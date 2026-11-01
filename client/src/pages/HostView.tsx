@@ -7,6 +7,8 @@ import { AdminControlModal } from '../components/AdminControlModal';
 import type { HouseData, Question } from '../types';
 import YouTube from 'react-youtube';
 import { ForestScene, SparkleBurst } from '../theme/Forest';
+import { useHostSounds } from '../sound/useGameSounds';
+import { SoundToggle } from '../sound/SoundToggle';
 
 const PART_TITLES: Record<number, string> = {
   1: 'ห้องแล็บบอร์ดเกม',
@@ -120,6 +122,8 @@ const HostView: React.FC = () => {
     setAutoTabbed(true);
     if (sessionState !== 'LOBBY') setActiveTab('QUIZ');
   }, [sessionState, autoTabbed]);
+
+  useHostSounds(session, countdown, timeRemaining);
 
   if (!connected || !session) {
     return (
@@ -483,6 +487,7 @@ const HostView: React.FC = () => {
           >
             ↺ รีเซ็ตเกม
           </button>
+          <SoundToggle />
           <AdminSettingsButton onClick={() => setShowAdminModal(true)} />
         </div>
       </header>

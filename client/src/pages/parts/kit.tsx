@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
 import { SparkleBurst, Trail } from '../../theme/Forest';
 import { seededShuffle } from '../../utils/shuffle';
+import { play } from '../../sound/sfx';
 
 // Shared building blocks for the Part screens, drawn as a parchment page
 // (theme/forest.css). Each Part is a stepper whose answers are saved per house to
@@ -144,7 +145,7 @@ export const Quiz: React.FC<{ quiz: QuizDef; picked: string | null; onPick: (id:
         const cls = picked ? (o.correct ? 'is-right' : picked === o.id ? 'is-wrong' : '') : '';
         return (
           <div key={o.id} style={{ position: 'relative' }}>
-            <button className={`lh-strip ${cls}`} disabled={!!picked} onClick={() => { setFresh(true); onPick(o.id); }}
+            <button className={`lh-strip ${cls}`} disabled={!!picked} onClick={() => { setFresh(true); play(o.correct ? 'correct' : 'wrong'); onPick(o.id); }}
               style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: picked ? 'default' : 'pointer', opacity: 1, filter: 'none' }}>
               <span aria-hidden="true" style={{ width: '26px', height: '26px', borderRadius: '50%', border: '2px solid #7A5530', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cinzel', serif", fontSize: '12px', fontWeight: 700, color: '#7A5530', flexShrink: 0 }}>{'ABC'[i]}</span>
               <span>{o.text}</span>

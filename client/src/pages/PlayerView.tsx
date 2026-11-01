@@ -4,6 +4,9 @@ import { useSocket } from '../context/SocketContext';
 import { nightNews, gameOutcome } from '../utils/nightRecap';
 import { houseSummaries } from '../utils/finalSummary';
 import { ForestScene } from '../theme/Forest';
+import { usePlayerSounds } from '../sound/useGameSounds';
+import { SoundToggle } from '../sound/SoundToggle';
+import { play } from '../sound/sfx';
 import { getDeviceId } from '../utils/deviceId';
 import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
 import Part1 from './parts/Part1';
@@ -107,6 +110,8 @@ const PlayerView: React.FC = () => {
     return () => clearTimeout(timer);
   }, [showHint, hintCountdown]);
 
+  usePlayerSounds(session, houseId, countdown, timeRemaining);
+
   if (error) {
     const taken = error === 'TAKEN' || error === 'ALREADY_IN_OTHER_HOUSE' || error === 'CARD_USED';
     return (
@@ -158,6 +163,7 @@ const PlayerView: React.FC = () => {
   const handleSubmit = (key: string) => {
     if (session.state !== 'QUESTION_OPEN' || house.hasSubmitted) return;
     setSelectedKey(key);
+    play('select');
     socket?.emit('submitAnswer', { sessionId: session.id, houseId, key }, (res) => {
       if (res.error) {
         console.error(res.error);
@@ -439,9 +445,14 @@ const PlayerView: React.FC = () => {
                         disabled={actionUsed || house.usedNightSkill || isOwnHouse || isDead}
                         onClick={() => {
                           if (house.role === 'WOODCUTTER') {
+                            play('magic');
                             socket?.emit('useNightSkill', { houseId }, () => setActionUsed(true));
                             return;
                           }
+                          // sound for the skill being used (the wolf's coin plays when its score rises)
+                          if (house.role === 'RED_RIDING_HOOD') play('magic');
+                          else if (house.role === 'GRANDMA' || (house.role === 'WITCH' && witchAction === 'protect')) play('shield');
+                          else if (house.role === 'HUNTER' || (house.role === 'WITCH' && witchAction === 'attack')) play('attack');
 
                           setSelectedTarget(h);
                           const action = house.role === 'WITCH' ? witchAction! : undefined;
@@ -619,6 +630,7 @@ const PlayerView: React.FC = () => {
             <img src={`/houses/${houseId}.png`} alt="" style={{ width: '40px', height: '40px', objectFit: 'contain', margin: '-8px 0' }} />
             <span className="lh-display" style={{ fontSize: '18px' }}>บ้านที่ {houseId}</span>
           </div>
+          <SoundToggle style={{ marginLeft: 'auto' }} />
           <div className="lh-plaque" style={{ padding: '6px 14px' }}>
             <span className="lh-coin" />
             <span key={house.score} className="lh-pop" style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '20px' }}>{house.score}</span>

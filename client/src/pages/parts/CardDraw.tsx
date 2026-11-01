@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { SparkleBurst } from '../../theme/Forest';
+import { play } from '../../sound/sfx';
 
 // A digital two-deck card draw (Part 3): shuffle → fan of face-down cards →
 // tap one to flip it. Which card a house gets is decided by `dealt`
@@ -77,7 +78,7 @@ export const Deck: React.FC<{
               key={i}
               aria-label={phase === 'fan' && picked === null ? `เลือกการ์ด${label}ใบที่ ${i + 1}` : undefined}
               disabled={phase !== 'fan' || picked !== null}
-              onClick={() => { setPicked(i); setFresh(true); setTimeout(() => onDraw(dealt.title), 450); }}
+              onClick={() => { setPicked(i); setFresh(true); play('flip'); setTimeout(() => { play('reveal'); onDraw(dealt.title); }, 450); }}
               className={phase === 'shuffling' ? 'lh-card-shuffle' : ''}
               style={{
                 position: 'absolute', left: '50%', top: '10px', width: `${cardW}px`, height: `${cardH}px`, padding: 0, border: 'none', background: 'none',
@@ -103,7 +104,7 @@ export const Deck: React.FC<{
           );
         })}
       </div>
-      {phase === 'stack' && <button className="lh-sign" onClick={() => setPhase('shuffling')}>สับไพ่{label}</button>}
+      {phase === 'stack' && <button className="lh-sign" onClick={() => { play('shuffle'); setPhase('shuffling'); }}>สับไพ่{label}</button>}
       {phase === 'shuffling' && <p className="lh-breathe" style={{ margin: 0, fontSize: '14px', color: 'var(--lh-ink-soft)' }}>กำลังสับไพ่…</p>}
       {phase === 'fan' && picked === null && <p className="lh-breathe" style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>แตะเลือก 1 ใบ</p>}
       {drawn && <p className="lh-pop" style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: dark }}>ได้: {drawn}</p>}
