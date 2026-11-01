@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
+import { nightNews } from '../utils/nightRecap';
 import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
 import Part1 from './parts/Part1';
 
@@ -56,6 +57,7 @@ const PlayerView: React.FC = () => {
   // Night Mode now repeats after every Part — clear last round's local UI state
   // so the house can act again in the new round.
   const nightRound = session?.state === 'NIGHT_MODE' ? session.lastCompletedPart : undefined;
+  const currentNight = session?.lastCompletedPart || 1;
   useEffect(() => {
     if (nightRound === undefined) return;
     setWitchAction(null);
@@ -249,14 +251,27 @@ const PlayerView: React.FC = () => {
         if (session.awakeHouseId !== houseId) {
           return (
             <div style={{ ...cardStyle, background: 'rgba(17, 17, 17, 0.9)', border: '1px solid #333' }}>
-              <h2 style={{ fontSize: '28px', color: '#aaa', marginBottom: '16px' }}>คืนนี้จงหลับตา...</h2>
+              <h2 style={{ fontSize: '28px', color: '#aaa', marginBottom: '16px' }}>คืนที่ {currentNight} — จงหลับตา...</h2>
               <p style={{ opacity: 0.5, color: '#fff' }}>รอฟังเสียงจากผู้ควบคุมเกม</p>
+              {currentNight > 1 && (
+                <div style={{ marginTop: '24px', textAlign: 'left', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', color: '#ddd' }}>
+                  <div style={{ fontWeight: 'bold', color: '#D9AE6E', marginBottom: '8px' }}>☀️ ข่าวจากคืนที่ {currentNight - 1}</div>
+                  {nightNews(session, currentNight - 1).map((line, i) => <div key={i} style={{ padding: '2px 0' }}>{line}</div>)}
+                  <div style={{ marginTop: '12px', fontSize: '15px', opacity: 0.8 }}>
+                    บ้านของคุณ: {house.isDead ? '☠️ ล้มลงแล้ว' : (house.injuries ? '❤️‍🩹 บาดเจ็บ 1 ครั้ง' : '❤️ ปลอดภัยดี')}
+                  </div>
+                </div>
+              )}
             </div>
           );
         }
 
         const roleInfo = roleData[house.role as keyof typeof roleData];
         if (!roleInfo) return null;
+        // Grandma can't guard the same house two nights in a row (server enforces it too).
+        const grandmaBlocked = house.role === 'GRANDMA'
+          ? session.nightLog?.find(e => e.night === currentNight - 1 && e.actorHouseId === houseId && e.effect === 'PROTECT')?.targetHouseId
+          : undefined;
 
         return (
           <div style={{ width: '100%', maxWidth: '900px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -329,10 +344,18 @@ const PlayerView: React.FC = () => {
 
                 {house.role === 'WOODCUTTER' && house.woodcutterResult && (
                   <div style={{ background: 'rgba(0,0,0,0.7)', padding: '16px 24px', borderRadius: '16px', color: '#fff', marginBottom: '24px', fontSize: '20px', border: '1px solid #555' }}>
-                    ระบบสุ่มผู้ต้องสงสัยมาให้ 3 หลัง มี 1 หลังเป็น <strong>หมาป่า</strong> แน่นอน 🔍
+                    {currentNight === 1
+                      ? <>ระบบสุ่มผู้ต้องสงสัยมาให้ {house.woodcutterResult.length} หลัง มี 1 หลังเป็น <strong>หมาป่า</strong> แน่นอน 🔍</>
+                      : <>เบาะแสจากคืนก่อนช่วยตัดผู้บริสุทธิ์ออก เหลือผู้ต้องสงสัย {house.woodcutterResult.length} หลัง มี 1 หลังเป็น <strong>หมาป่า</strong> แน่นอน 🔍</>}
                   </div>
                 )}
                 
+                {grandmaBlocked && (
+                  <div style={{ background: 'rgba(0,0,0,0.7)', padding: '16px 24px', borderRadius: '16px', color: '#fff', marginBottom: '24px', fontSize: '20px', border: '1px solid #555' }}>
+                    เมื่อคืนคุณปกป้องบ้านที่ {grandmaBlocked} ไปแล้ว คืนนี้ต้องเลือกบ้านอื่น 🛡️
+                  </div>
+                )}
+
                 {wolfEarned && (
                   <div style={{ background: 'rgba(255, 215, 0, 0.9)', color: '#000', padding: '24px 40px', borderRadius: '24px', border: '4px solid #B8860B', textAlign: 'center', fontWeight: 'bold', fontSize: '36px', boxShadow: '0 0 40px rgba(255,215,0,0.6)', margin: '16px 0', zIndex: 50, position: 'absolute', top: '50%', display: 'flex', alignItems: 'center', gap: '20px' }}>
                     <img src="/icons/steal.png" alt="Steal" style={{ width: '80px', height: '80px', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.4))' }} />
@@ -345,7 +368,7 @@ const PlayerView: React.FC = () => {
                   {[1, 2, 3, 4, 5, 6].map(h => {
                     const isOwnHouse = h === houseId;
                     const isSuspect = house.role === 'WOODCUTTER' && house.woodcutterResult?.includes(h);
-                    const isDimmed = isOwnHouse || (house.role === 'WOODCUTTER' && !isSuspect);
+                    const isDimmed = isOwnHouse || (house.role === 'WOODCUTTER' && !isSuspect) || h === grandmaBlocked;
                     
                     const targetHouseData = session.houses[h];
                     const isProtected = targetHouseData?.isProtected;
@@ -361,7 +384,7 @@ const PlayerView: React.FC = () => {
                     return (
                       <button 
                         key={h}
-                        disabled={actionUsed || house.usedNightSkill || isOwnHouse || isDead}
+                        disabled={actionUsed || house.usedNightSkill || isOwnHouse || isDead || h === grandmaBlocked}
                         onClick={() => {
                           if (house.role === 'WOODCUTTER') {
                             socket?.emit('useNightSkill', { houseId }, () => setActionUsed(true));
@@ -391,7 +414,7 @@ const PlayerView: React.FC = () => {
                           display: 'flex',
                           flexDirection: 'column',
                           alignItems: 'center',
-                          cursor: (actionUsed || house.usedNightSkill || isOwnHouse || isDead) ? 'default' : 'pointer',
+                          cursor: (actionUsed || house.usedNightSkill || isOwnHouse || isDead || h === grandmaBlocked) ? 'default' : 'pointer',
                           transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                           opacity: isDead ? 0.3 : ((actionUsed || house.usedNightSkill) && selectedTarget !== h ? 0.3 : (isDimmed ? 0.4 : 1)),
                           position: 'relative',

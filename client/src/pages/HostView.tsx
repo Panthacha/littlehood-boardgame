@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
+import { nightNews } from '../utils/nightRecap';
 import { AdminSettingsButton } from '../components/AdminSettingsButton';
 import { AdminControlModal } from '../components/AdminControlModal';
 import { QRCodeSVG } from 'qrcode.react';
@@ -409,6 +410,14 @@ const HostView: React.FC = () => {
             <div style={{ fontSize: '15px', color: 'rgba(246,232,205,0.6)', marginBottom: '32px' }}>
               บ้านออนไลน์: <strong style={{ color: '#4ade80' }}>{readyCount}</strong> / 6
             </div>
+            {partNum > 1 && (
+              <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(217,174,110,0.35)', borderRadius: '16px', padding: '20px 24px', marginBottom: '32px' }}>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#D9AE6E', marginBottom: '10px' }}>☀️ เช้าวันใหม่ — ข่าวจากคืนที่ {partNum - 1}</div>
+                {nightNews(session, partNum - 1).map((line, i) => (
+                  <div key={i} style={{ fontSize: '17px', color: '#F6E8CD', padding: '4px 0' }}>{line}</div>
+                ))}
+              </div>
+            )}
             <button
               onClick={() => socket?.emit('hostStartNightMode')}
               style={{
@@ -475,6 +484,9 @@ const HostView: React.FC = () => {
             }}>
               {isAwake ? '✨ มีบางสิ่งที่กำลังจะเกิดขึ้นในความมืดมิด ✨' : '✨ ทุกบ้านหลับตาลงและรอฟังเสียงสวรรค์เรียกหา ✨'}
             </p>
+            <div style={{ marginTop: '24px', fontSize: '22px', color: 'rgba(214,228,255,0.7)', letterSpacing: '2px' }}>
+              คืนที่ {session.lastCompletedPart || 1} / 5
+            </div>
           </div>
           {(() => {
             const completedPart = session.lastCompletedPart || 1;
@@ -541,6 +553,19 @@ const HostView: React.FC = () => {
                   <div style={{ fontSize: '20px', color: i === 0 ? '#fff' : 'rgba(255,255,255,0.8)' }}>
                     <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/5)
                   </div>
+                </div>
+              ))}
+            </div>
+            <h3 style={{ fontSize: '26px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', margin: '40px 0 16px', textAlign: 'center' }}>
+              🌙 เรื่องราวตลอด 5 คืน
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <div key={n} style={{ background: 'rgba(0,0,0,0.35)', borderRadius: '12px', padding: '14px 20px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ fontWeight: 'bold', color: '#D9AE6E', marginBottom: '6px' }}>คืนที่ {n} (หลัง Part {n}: {PART_TITLES[n]})</div>
+                  {nightNews(session, n).map((line, i) => (
+                    <div key={i} style={{ fontSize: '16px', color: '#F6E8CD', padding: '2px 0' }}>{line}</div>
+                  ))}
                 </div>
               ))}
             </div>

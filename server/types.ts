@@ -2,6 +2,19 @@ export type GameState = 'LOBBY' | 'COUNTDOWN' | 'QUESTION_OPEN' | 'QUESTION_CLOS
 
 export type Role = 'RED_RIDING_HOOD' | 'GRANDMA' | 'WOLF' | 'HUNTER' | 'WOODCUTTER' | 'WITCH';
 
+// One entry per night skill use. The full log (with actor) is for the
+// teacher's admin screen; the big screen and players only ever see the
+// actor-less "morning news" built from it (client/src/utils/nightRecap.ts).
+export type NightEffect = 'STEAL' | 'PROTECT' | 'INJURE' | 'KILL' | 'BLOCKED' | 'PEEK' | 'INVESTIGATE';
+
+export interface NightEvent {
+  night: number;
+  actorHouseId: number;
+  actorRole: Role;
+  targetHouseId?: number;
+  effect: NightEffect;
+}
+
 export interface Question {
   id: number;
   text: string;
@@ -34,7 +47,7 @@ export interface HouseData {
   injuries?: number;
   isDead?: boolean;
   usedNightSkill?: boolean;
-  woodcutterResult?: number[]; // [h1, h2, h3]
+  woodcutterResult?: number[]; // suspects (always includes the wolf); narrows night after night
 }
 
 export interface Session {
@@ -49,6 +62,7 @@ export interface Session {
   awakeHouseId?: number | null; // house currently awake in NIGHT_MODE
   lastCompletedPart?: number; // which Part (1-5) a NIGHT_MODE round follows, so the host's
                                // "next" button knows whether to go to the next Part or FINISHED
+  nightLog?: NightEvent[]; // every night's skill uses, accumulated across all 5 nights
 }
 
 // Client to Server Events

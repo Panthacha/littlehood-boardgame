@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { Settings, ArrowLeft, RotateCcw, Users, SkipForward } from 'lucide-react';
+import { ROLE_NAMES, describeEvent } from '../utils/nightRecap';
 
 const AdminView: React.FC = () => {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ const AdminView: React.FC = () => {
                         บ้านที่ {id} {isAwake ? '👁️' : '😴'}
                       </div>
                       <div style={{ marginBottom: '8px', color: '#fff' }}>
-                        บทบาท: <strong>{house?.role || '???'}</strong>
+                        บทบาท: <strong>{house?.role ? ROLE_NAMES[house.role] : '???'}</strong>
                       </div>
                       <div style={{ fontSize: '14px', color: '#aaa', marginBottom: '12px' }}>
                         ทักษะ: {house?.usedNightSkill ? 'ใช้แล้ว ✅' : 'ยังไม่ใช้ ❌'} <br/>
@@ -105,6 +106,18 @@ const AdminView: React.FC = () => {
                     </div>
                   );
                 })}
+                <div style={{ gridColumn: '1 / -1', marginTop: '16px', padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', color: '#ddd' }}>
+                  <div style={{ fontWeight: 'bold', color: '#D9AE6E', marginBottom: '8px' }}>บันทึกทุกคืน (เห็นเฉพาะผู้สอน)</div>
+                  {[1, 2, 3, 4, 5].filter(n => n <= (session.lastCompletedPart || 1)).map(n => {
+                    const events = (session.nightLog || []).filter(e => e.night === n);
+                    return (
+                      <div key={n} style={{ marginBottom: '8px' }}>
+                        <strong>คืนที่ {n}:</strong>{' '}
+                        {events.length ? events.map(describeEvent).join(' · ') : 'ยังไม่มีใครใช้ทักษะ'}
+                      </div>
+                    );
+                  })}
+                </div>
                 <div style={{ gridColumn: '1 / -1', marginTop: '16px', display: 'flex', justifyContent: 'center' }}>
                   <button
                     onClick={() => {
