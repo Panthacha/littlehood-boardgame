@@ -81,10 +81,10 @@ const Part4: React.FC<{ houseId: number }> = ({ houseId }) => {
             const done = !!data.checked[c.id];
             return (
               <button key={c.id} onClick={() => update((d) => ({ checked: { ...d.checked, [c.id]: !d.checked[c.id] } }))} style={{
-                display: 'flex', alignItems: 'center', gap: '14px', minHeight: '56px', padding: '0 18px', borderRadius: '14px', color: '#F6E8CD', textAlign: 'left', cursor: 'pointer',
-                border: done ? '1px solid rgba(74,222,128,0.5)' : '1px solid rgba(217,174,110,0.25)', background: done ? 'rgba(74,222,128,0.08)' : 'rgba(0,0,0,0.3)'
+                display: 'flex', alignItems: 'center', gap: '14px', minHeight: '56px', padding: '0 18px', borderRadius: '14px', color: '#2B1D12', textAlign: 'left', cursor: 'pointer',
+                border: done ? '1px solid rgba(47,107,58,0.5)' : '1px solid rgba(122,85,48,0.25)', background: done ? 'rgba(47,107,58,0.08)' : 'rgba(122,85,48,0.1)'
               }}>
-                <span style={{ width: '24px', height: '24px', borderRadius: '7px', border: `2px solid ${done ? '#4ade80' : 'rgba(217,174,110,0.5)'}`, background: done ? '#4ade80' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#101D18', flexShrink: 0 }}>{done ? '✓' : ''}</span>
+                <span style={{ width: '24px', height: '24px', borderRadius: '7px', border: `2px solid ${done ? '#2F6B3A' : 'rgba(122,85,48,0.5)'}`, background: done ? '#2F6B3A' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#2B1D12', flexShrink: 0 }}>{done ? '✓' : ''}</span>
                 <span style={{ fontSize: '15px', fontWeight: 'bold' }}>{c.label}</span>
               </button>
             );

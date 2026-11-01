@@ -3,10 +3,9 @@ import { useSocket } from '../context/SocketContext';
 import { nightNews } from '../utils/nightRecap';
 import { AdminSettingsButton } from '../components/AdminSettingsButton';
 import { AdminControlModal } from '../components/AdminControlModal';
-import { QRCodeSVG } from 'qrcode.react';
-import type { Question } from '../types';
-import { getCharacter } from '../constants/characters';
+import type { HouseData, Question } from '../types';
 import YouTube from 'react-youtube';
+import { ForestScene, SparkleBurst } from '../theme/Forest';
 
 const PART_TITLES: Record<number, string> = {
   1: 'ห้องแล็บบอร์ดเกม',
@@ -14,6 +13,52 @@ const PART_TITLES: Record<number, string> = {
   3: 'ห้องออกแบบกติกา',
   4: 'ห้องประกอบต้นแบบ',
   5: 'ห้องทดสอบและเล่าเรื่อง'
+};
+
+// Answer colors, shared with the players' wax-seal answer buttons
+const OPTION_STYLE: Record<string, { color: string; dark: string }> = {
+  'ก': { color: '#A8233A', dark: '#5A0E1A' },
+  'ข': { color: '#2F6B3A', dark: '#163A1C' },
+  'ค': { color: '#2C4F8A', dark: '#14284A' },
+  'ง': { color: '#B07A1E', dark: '#5A3C0A' }
+};
+const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+
+// One cottage from /houses, dark until `lit`.
+const Cottage: React.FC<{ id: number; lit: boolean; size?: number; children?: React.ReactNode }> = ({ id, lit, size = 200, children }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: size }}>
+    <img src={`/houses/${id}.png`} alt="" className={`lh-house ${lit ? 'is-lit' : 'is-dark'}`} style={{ width: size, margin: `-${size * 0.14}px 0 -${size * 0.2}px` }} />
+    <span className="lh-plaque" style={{ position: 'relative', zIndex: 1, padding: '4px 16px' }}>
+      <span className="lh-display" style={{ fontSize: size > 150 ? '20px' : '16px' }}>บ้านที่ {id}</span>
+    </span>
+    {children}
+  </div>
+);
+
+// Ranked ledger used by both scoreboards
+const Ledger: React.FC<{ houses: HouseData[] }> = ({ houses }) => {
+  const sorted = [...houses].sort((a, b) => b.score - a.score);
+  const top = Math.max(1, ...sorted.map(h => h.score));
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      {sorted.map((h, i) => (
+        <div key={h.houseId} className="lh-ledger-row" style={{ animationDelay: `${0.12 * (sorted.length - i)}s`, display: 'grid', gridTemplateColumns: '56px 84px 1fr 150px', alignItems: 'center', gap: '16px', padding: '6px 10px', borderBottom: '1px dashed rgba(122,85,48,0.4)' }}>
+          <span className={i === 0 ? 'lh-seal lh-stamp' : ''} style={{ width: '48px', height: '48px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '22px', color: i === 0 ? '#F6D9C0' : 'var(--lh-ink-soft)' }}>{i + 1}</span>
+          <img src={`/houses/${h.houseId}.png`} alt="" style={{ width: '84px', margin: '-14px 0 -18px', filter: 'drop-shadow(0 6px 6px rgba(0,0,0,0.35))' }} />
+          <div>
+            <div className="lh-display" style={{ fontSize: '22px' }}>บ้านที่ {h.houseId} {i === 0 && <span style={{ color: 'var(--lh-hood)' }}>· ผู้นำ</span>}</div>
+            <div style={{ height: '10px', marginTop: '6px', borderRadius: '999px', background: 'rgba(122,85,48,0.15)', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${Math.max(0, (h.score / top) * 100)}%`, background: i === 0 ? 'linear-gradient(90deg, #B07A1E, #E0B866)' : '#8A5A1E', transition: 'width 1.2s ease' }} />
+            </div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}><span className="lh-coin" /><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '26px' }}>{h.score}</strong></div>
+            <div style={{ fontSize: '14px', color: 'var(--lh-ink-soft)' }}>ตอบถูก {h.correctAnswers}/5</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 };
 
 const HostView: React.FC = () => {
@@ -60,218 +105,54 @@ const HostView: React.FC = () => {
   }, [socket, connected]);
 
   if (!connected || !session) {
-    return <div className="min-h-screen forest-bg p-6 text-white text-center">กำลังโหลด...</div>;
+    return (
+      <ForestScene>
+        <div className="lh-display lh-breathe" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', color: 'var(--lh-gold-bright)' }}>กำลังเข้าสู่ผืนป่า…</div>
+      </ForestScene>
+    );
   }
 
+  const sign = (label: React.ReactNode, onClick: () => void, variant = '', extra: React.CSSProperties = {}, disabled = false) => (
+    <button className={`lh-sign lh-sign--big ${variant}`} onClick={onClick} disabled={disabled} style={extra}>{label}</button>
+  );
+  const pageCard: React.CSSProperties = { maxWidth: '1100px', width: '100%', margin: '0 auto', padding: '40px 48px' };
+
   const renderTabs = () => (
-    <div className="tab-bar">
-      <button 
-        className={`tab-item ${activeTab === 'LOBBY' ? 'active' : ''}`}
-        onClick={() => setActiveTab('LOBBY')}
-      >
-        ผู้เข้าร่วม
-      </button>
-      <button 
-        className={`tab-item ${activeTab === 'QUIZ' ? 'active' : ''}`}
-        onClick={() => setActiveTab('QUIZ')}
-      >
-        เริ่มภารกิจ
-      </button>
+    <div style={{ display: 'flex', gap: '10px' }} role="tablist">
+      <button role="tab" aria-selected={activeTab === 'LOBBY'} className={`lh-tab ${activeTab === 'LOBBY' ? 'is-active' : ''}`} onClick={() => setActiveTab('LOBBY')}>ผู้เข้าร่วม</button>
+      <button role="tab" aria-selected={activeTab === 'QUIZ'} className={`lh-tab ${activeTab === 'QUIZ' ? 'is-active' : ''}`} onClick={() => setActiveTab('QUIZ')}>ภารกิจ</button>
     </div>
   );
 
   const renderLobbyTab = () => {
     const readyHousesCount = Object.values(session.houses).filter(h => h.isOnline).length;
-    
+    const canStart = session.state === 'LOBBY' && readyHousesCount > 0;
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        width: '100%',
-        maxWidth: '1000px',
-        margin: '0 auto',
-        padding: '0 20px',
-        animation: 'fadeIn 0.5s ease'
-      }}>
-        <div style={{ textAlign: 'center', marginBottom: '40px', position: 'relative' }}>
-          {/* Subtle magical glow behind title */}
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '200%', height: '100%', background: 'radial-gradient(ellipse at center, rgba(217, 174, 110, 0.15) 0%, transparent 70%)', zIndex: 0, pointerEvents: 'none' }} />
-          
-          <h2 style={{
-            fontFamily: "'Cinzel', serif",
-            fontSize: '36px',
-            color: '#F6E8CD',
-            textShadow: '0 2px 10px rgba(0,0,0,0.8), 0 0 20px rgba(217, 174, 110, 0.4)',
-            marginBottom: '12px',
-            position: 'relative',
-            zIndex: 1
-          }}>
-            หมู่บ้านของเราพร้อมออกเดินทางหรือยัง?
-          </h2>
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: 'rgba(0,0,0,0.4)',
-            border: '1px solid rgba(217, 174, 110, 0.3)',
-            borderRadius: '20px',
-            padding: '6px 20px',
-            position: 'relative',
-            zIndex: 1
-          }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: readyHousesCount === 6 ? '#4ade80' : '#facc15', boxShadow: `0 0 10px ${readyHousesCount === 6 ? '#4ade80' : '#facc15'}` }} />
-            <p style={{ color: '#BCAF97', fontSize: '16px', letterSpacing: '0.05em', margin: 0 }}>
-              พร้อมแล้ว <strong style={{ color: '#F6E8CD', fontSize: '18px' }}>{readyHousesCount}</strong> จาก 6 บ้าน
-            </p>
-          </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '36px', paddingTop: '20px' }}>
+        <div className="lh-rise" style={{ textAlign: 'center' }}>
+          <h2 className="lh-display" style={{ fontSize: '40px', color: 'var(--lh-gold-bright)', textShadow: '0 3px 0 rgba(0,0,0,0.6), 0 0 30px rgba(0,0,0,0.7)' }}>หมู่บ้านของเราพร้อมออกเดินทางหรือยัง?</h2>
+          <p style={{ marginTop: '10px', fontSize: '20px', color: 'var(--lh-cream)', textShadow: '0 1px 8px rgba(0,0,0,0.9)' }}>
+            ไฟติดแล้ว <strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px', color: 'var(--lh-gold-bright)' }}>{readyHousesCount}</strong> จาก 6 บ้าน
+          </p>
         </div>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: '24px',
-          width: '100%',
-          marginBottom: '48px',
-          position: 'relative',
-          zIndex: 1
-        }}>
-          {Object.values(session.houses).map((house) => {
-            const activePlayersCount = house.players.filter(p => p.isOnline).length;
-            const isHouseActive = activePlayersCount > 0;
-            return (
-            <div key={house.houseId} style={{
-              position: 'relative',
-              borderRadius: '24px',
-              padding: '24px',
-              textAlign: 'center',
-              border: `2px solid ${isHouseActive ? '#D9AE6E' : 'rgba(217, 174, 110, 0.2)'}`,
-              boxShadow: isHouseActive ? '0 15px 35px rgba(0,0,0,0.6), inset 0 0 20px rgba(217, 174, 110, 0.3)' : '0 10px 25px rgba(0,0,0,0.5)',
-              transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              transform: isHouseActive ? 'translateY(-8px)' : 'none',
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: '200px'
-            }}>
-              {/* Background Image with Blur & Darkening */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                backgroundImage: `url('/houses/${house.houseId}.png')`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                filter: isHouseActive ? 'brightness(0.7)' : 'brightness(0.3) grayscale(0.8)',
-                zIndex: 0,
-                transition: 'all 0.4s ease'
-              }} />
-              
-              {/* Gradient Overlay for Readability */}
-              <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: isHouseActive 
-                  ? 'linear-gradient(to top, rgba(15, 25, 20, 0.95) 0%, rgba(30, 48, 38, 0.3) 50%, rgba(30, 48, 38, 0.1) 100%)'
-                  : 'rgba(10, 18, 11, 0.75)',
-                zIndex: 1,
-              }} />
 
-              {/* Shine effect for online houses */}
-              {isHouseActive && (
-                <div style={{ position: 'absolute', top: 0, left: '-100%', width: '50%', height: '100%', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.15), transparent)', transform: 'skewX(-20deg)', animation: 'shine 3s infinite', zIndex: 2 }} />
-              )}
-              
-              <div style={{ position: 'relative', zIndex: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', width: '100%', height: '100%' }}>
-                <h3 style={{
-                  fontFamily: "'Cinzel', serif",
-                  fontSize: '22px',
-                  fontWeight: 'bold',
-                  color: isHouseActive ? '#F6E8CD' : 'rgba(246, 232, 205, 0.5)',
-                  margin: '0 0 12px 0',
-                  letterSpacing: '0.05em',
-                  textShadow: '0 2px 8px rgba(0,0,0,1)'
-                }}>
-                  บ้านที่ {house.houseId}
-                </h3>
-                
-                {isHouseActive ? (
-                  <div style={{
-                    display: 'inline-block',
-                    background: 'rgba(74, 222, 128, 0.15)',
-                    border: '1px solid rgba(74, 222, 128, 0.4)',
-                    color: '#4ade80',
-                    padding: '6px 16px',
-                    borderRadius: '12px',
-                    fontSize: '14px',
-                    fontWeight: 'bold',
-                    boxShadow: '0 0 15px rgba(74, 222, 128, 0.15)',
-                    backdropFilter: 'blur(4px)'
-                  }}>
-                    เข้าร่วมแล้ว ({activePlayersCount} คน)
-                  </div>
-                ) : (
-                  <div style={{
-                    color: 'rgba(255, 255, 255, 0.4)',
-                    fontSize: '14px',
-                    fontStyle: 'italic',
-                    background: 'rgba(0,0,0,0.3)',
-                    padding: '4px 12px',
-                    borderRadius: '8px'
-                  }}>
-                    รอผู้เข้าร่วม...
-                  </div>
-                )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '12px', width: '100%', maxWidth: '1400px', alignItems: 'end' }}>
+          {Object.values(session.houses).map((house, i) => {
+            const online = house.players.filter(p => p.isOnline).length;
+            return (
+              <div key={house.houseId} style={{ display: 'flex', justifyContent: 'center', transform: `translateY(${i % 2 ? -18 : 0}px)` }}>
+                {/* isOnline stays true once anyone joined (phones sleep and drop the socket) */}
+                <Cottage id={house.houseId} lit={house.isOnline} size={220}>
+                  <span style={{ marginTop: '8px', fontSize: '16px', fontWeight: 'bold', color: house.isOnline ? '#BDF0C6' : 'rgba(246,232,205,0.55)', textShadow: '0 1px 6px rgba(0,0,0,0.9)' }}>
+                    {!house.isOnline ? 'รอผู้เดินทาง…' : online > 0 ? `เข้าร่วมแล้ว ${online} คน` : 'เข้าร่วมแล้ว'}
+                  </span>
+                </Cottage>
               </div>
-            </div>
-          )})}
+            );
+          })}
         </div>
-        
-        <div style={{ width: '100%', maxWidth: '360px', marginBottom: '60px' }}>
-          <button 
-            style={{
-              width: '100%',
-              background: (session.state !== 'LOBBY' || readyHousesCount === 0) ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg, #9D3543, #6D1E26)',
-              color: (session.state !== 'LOBBY' || readyHousesCount === 0) ? 'rgba(255,255,255,0.3)' : '#F6E8CD',
-              border: (session.state !== 'LOBBY' || readyHousesCount === 0) ? '1px solid rgba(255,255,255,0.1)' : '2px solid #D9AE6E',
-              padding: '18px 32px',
-              borderRadius: '16px',
-              fontSize: '22px',
-              fontWeight: 'bold',
-              fontFamily: "'Noto Sans Thai', sans-serif",
-              cursor: (session.state !== 'LOBBY' || readyHousesCount === 0) ? 'not-allowed' : 'pointer',
-              boxShadow: (session.state !== 'LOBBY' || readyHousesCount === 0) ? 'none' : '0 8px 25px rgba(157, 53, 67, 0.5), inset 0 0 15px rgba(217, 174, 110, 0.3)',
-              transition: 'all 0.3s',
-              transform: (session.state !== 'LOBBY' || readyHousesCount === 0) ? 'none' : 'translateY(0)',
-              letterSpacing: '0.05em'
-            }}
-            onMouseOver={(e) => {
-              if (session.state === 'LOBBY' && readyHousesCount > 0) {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 12px 30px rgba(157, 53, 67, 0.7), inset 0 0 20px rgba(217, 174, 110, 0.5)';
-              }
-            }}
-            onMouseOut={(e) => {
-              if (session.state === 'LOBBY' && readyHousesCount > 0) {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 8px 25px rgba(157, 53, 67, 0.5), inset 0 0 15px rgba(217, 174, 110, 0.3)';
-              }
-            }}
-            onClick={() => {
-              setPlayingIntro(true);
-            }}
-            disabled={session.state !== 'LOBBY' || readyHousesCount === 0}
-          >
-            เริ่มเกม
-          </button>
-        </div>
+
+        {sign(session.state === 'LOBBY' ? 'เริ่มการเดินทาง →' : 'เกมเริ่มแล้ว', () => setPlayingIntro(true), `lh-sign--hood ${canStart ? 'lh-glow-pulse' : ''}`, { minWidth: '360px' }, !canStart)}
       </div>
     );
   };
@@ -279,531 +160,195 @@ const HostView: React.FC = () => {
   const renderQuizTab = () => {
     if (session.state === 'LOBBY') {
       return (
-        <div style={{
-          background: 'rgba(10, 18, 11, 0.7)',
-          border: '2px solid rgba(217, 174, 110, 0.3)',
-          borderRadius: '24px',
-          padding: '60px 40px',
-          textAlign: 'center',
-          maxWidth: '600px',
-          margin: '40px auto',
-          boxShadow: '0 15px 40px rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(10px)'
-        }}>
-          <h2 style={{ fontSize: '36px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '24px', fontWeight: 'bold' }}>เกมยังไม่เริ่ม</h2>
-          <p style={{ fontSize: '20px', color: '#F6E8CD', marginBottom: '32px', opacity: 0.9 }}>กรุณากลับไปที่แท็บ "ผู้เข้าร่วม" เพื่อเริ่มเกม</p>
-          <button 
-            style={{
-              background: 'linear-gradient(135deg, #1E392A, #2D5A27)',
-              color: '#F6E8CD',
-              border: '2px solid #4ade80',
-              padding: '16px 32px',
-              borderRadius: '16px',
-              fontSize: '20px',
-              fontWeight: 'bold',
-              fontFamily: "'Noto Sans Thai', sans-serif",
-              cursor: 'pointer',
-              boxShadow: '0 8px 25px rgba(45, 90, 39, 0.6), inset 0 0 15px rgba(74, 222, 128, 0.3)'
-            }}
-            onClick={() => setActiveTab('LOBBY')}
-          >
-            กลับไปห้องรอ
-          </button>
+        <div className="lh-parchment lh-flip" style={{ ...pageCard, maxWidth: '640px', textAlign: 'center', marginTop: '40px' }}>
+          <h2 className="lh-display" style={{ fontSize: '34px', marginBottom: '14px' }}>เกมยังไม่เริ่ม</h2>
+          <p style={{ fontSize: '20px', color: 'var(--lh-ink-soft)', marginBottom: '28px' }}>กลับไปที่แท็บ "ผู้เข้าร่วม" เพื่อเริ่มเกม</p>
+          {sign('กลับไปห้องรอ', () => setActiveTab('LOBBY'))}
         </div>
       );
     }
 
     if (session.state === 'COUNTDOWN') {
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }}>
-          <h2 style={{ fontSize: '48px', color: 'white', fontWeight: 'bold', marginBottom: '24px', textShadow: '0 4px 15px rgba(0,0,0,0.8)' }}>เตรียมพร้อม!</h2>
-          <div style={{ fontSize: '120px', color: '#D9AE6E', fontWeight: 'bold', textShadow: '0 0 40px rgba(217,174,110,0.6)' }}>{countdown > 0 ? countdown : 'เริ่ม!'}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '28px' }}>
+          <h2 className="lh-display" style={{ fontSize: '52px', color: 'var(--lh-cream)', textShadow: '0 4px 20px rgba(0,0,0,0.9)' }}>เตรียมพร้อม!</h2>
+          <span key={countdown} className="lh-seal lh-pop" style={{ width: '240px', height: '240px', fontSize: countdown > 0 ? '120px' : '56px', fontFamily: countdown > 0 ? "'Cinzel', serif" : 'var(--lh-display)', fontWeight: countdown > 0 ? 700 : 400 }}>
+            {countdown > 0 ? countdown : 'เริ่ม!'}
+          </span>
         </div>
       );
     }
 
     if (session.state === 'MID_SCOREBOARD') {
-       const sorted = Object.values(session.houses).sort((a, b) => b.score - a.score);
-       return (
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(30, 48, 38, 0.95), rgba(10, 18, 11, 0.98))',
-            border: '2px solid #D9AE6E',
-            borderRadius: '32px',
-            padding: '48px',
-            maxWidth: '800px',
-            margin: '0 auto',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(217, 174, 110, 0.2)',
-            backdropFilter: 'blur(15px)'
-          }}>
-            <h2 style={{ fontSize: '42px', fontFamily: "'Cinzel', serif", fontWeight: 'bold', textAlign: 'center', color: '#D9AE6E', marginBottom: '40px', textShadow: '0 4px 15px rgba(0,0,0,0.8)' }}>
-              🏆 สรุปคะแนนครึ่งแรก (Pre-test)
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {sorted.map((h, i) => (
-                <div key={h.houseId} style={{
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '20px 32px', 
-                  background: i === 0 ? 'linear-gradient(90deg, rgba(217, 174, 110, 0.3), rgba(217, 174, 110, 0.1))' : 'rgba(0,0,0,0.4)',
-                  borderRadius: '16px', 
-                  border: `1px solid ${i === 0 ? '#D9AE6E' : 'rgba(255,255,255,0.1)'}`,
-                  boxShadow: i === 0 ? '0 0 20px rgba(217, 174, 110, 0.2)' : 'none',
-                  transform: i === 0 ? 'scale(1.02)' : 'none',
-                  transition: 'all 0.3s'
-                }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: i === 0 ? '#D9AE6E' : '#F6E8CD' }}>
-                    อันดับ {i + 1} - บ้านที่ {h.houseId} {i === 0 && '👑'}
-                  </div>
-                  <div style={{ fontSize: '20px', color: i === 0 ? '#fff' : 'rgba(255,255,255,0.8)' }}>
-                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/5)
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center' }}>
-              <button
-                onClick={() => socket?.emit('hostStartPart', 1)}
-                style={{
-                  background: 'linear-gradient(135deg, #D9AE6E, #B88645)',
-                  color: '#1a1a1a',
-                  border: 'none',
-                  padding: '16px 40px',
-                  borderRadius: '16px',
-                  fontSize: '22px',
-                  fontWeight: 'bold',
-                  fontFamily: "'Noto Sans Thai', sans-serif",
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 25px rgba(217, 174, 110, 0.6)'
-                }}
-              >
-                เริ่ม Part 1: {PART_TITLES[1]} ➡️
-              </button>
-            </div>
+      return (
+        <div className="lh-parchment lh-flip" style={pageCard}>
+          <div className="lh-kicker" style={{ textAlign: 'center' }}>จบช่วง Pre-test</div>
+          <h2 className="lh-display" style={{ fontSize: '40px', textAlign: 'center', margin: '6px 0 26px' }}>อันดับหมู่บ้านครึ่งแรก</h2>
+          <Ledger houses={Object.values(session.houses)} />
+          <div style={{ marginTop: '34px', display: 'flex', justifyContent: 'center' }}>
+            {sign(<>เริ่ม Part 1: {PART_TITLES[1]} →</>, () => socket?.emit('hostStartPart', 1), 'lh-glow-pulse')}
           </div>
-       );
+        </div>
+      );
     }
 
     if (session.state.startsWith('PART_')) {
       const partNum = parseInt(session.state.replace('PART_', ''), 10);
-      const readyCount = Object.values(session.houses).filter(h => h.isOnline).length;
+      const done = session.partsCompleted?.[partNum] || [];
+      const online = Object.values(session.houses).filter(h => h.isOnline);
       return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '60vh', gap: '32px' }}>
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(30, 48, 38, 0.95), rgba(10, 18, 11, 0.98))',
-            border: '2px solid #D9AE6E',
-            borderRadius: '32px',
-            padding: '56px',
-            maxWidth: '700px',
-            textAlign: 'center',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(217, 174, 110, 0.2)'
-          }}>
-            <div style={{ fontSize: '14px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#D9AE6E', fontWeight: 'bold', marginBottom: '12px' }}>
-              Part {partNum} / 5
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '26px' }}>
+          <div className="lh-parchment lh-flip" style={{ ...pageCard, textAlign: 'center' }}>
+            <span className="lh-seal" aria-hidden="true" style={{ position: 'absolute', top: '26px', right: '30px', width: '80px', height: '80px', fontSize: '30px' }}>{ROMAN[partNum - 1]}</span>
+            <div className="lh-kicker">Part {partNum} / 5</div>
+            <h2 className="lh-display" style={{ fontSize: '48px', margin: '6px 0 10px' }}>{PART_TITLES[partNum]}</h2>
+            <p style={{ fontSize: '20px', color: 'var(--lh-ink-soft)' }}>แต่ละบ้านกำลังทำกิจกรรมบนมือถือ/iPad — บ้านไหนเสร็จแล้ว ไฟจะติด</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: '8px', margin: '30px 0 8px', justifyItems: 'center' }}>
+              {[1, 2, 3, 4, 5, 6].map(id => (
+                <Cottage key={id} id={id} lit={done.includes(id)} size={130}>
+                  <span style={{ marginTop: '6px', fontSize: '15px', fontWeight: 'bold', color: done.includes(id) ? '#2F6B3A' : 'var(--lh-ink-soft)' }}>
+                    {done.includes(id) ? '✓ เสร็จแล้ว' : session.houses[id]?.isOnline ? 'กำลังทำ…' : 'ไม่ได้เข้าร่วม'}
+                  </span>
+                </Cottage>
+              ))}
             </div>
-            <h2 style={{ fontSize: '38px', fontFamily: "'Cinzel', serif", color: '#F6E8CD', marginBottom: '20px' }}>
-              {PART_TITLES[partNum]}
-            </h2>
-            <p style={{ fontSize: '17px', color: 'rgba(246,232,205,0.75)', marginBottom: '32px' }}>
-              แต่ละบ้านกำลังทำกิจกรรมของตัวเองอยู่บนมือถือ/iPad — รอจนครบเวลาแล้วกดไปต่อ
-            </p>
-            <div style={{ fontSize: '15px', color: 'rgba(246,232,205,0.6)', marginBottom: '32px' }}>
-              บ้านออนไลน์: <strong style={{ color: '#4ade80' }}>{readyCount}</strong> / 6
-              {' · '}ทำ Part นี้เสร็จแล้ว: <strong style={{ color: '#D9AE6E' }}>{session.partsCompleted?.[partNum]?.length || 0}</strong> / {readyCount}
-              {!!session.partsCompleted?.[partNum]?.length && (
-                <div style={{ marginTop: '8px' }}>
-                  {[...session.partsCompleted[partNum]].sort((a, b) => a - b).map(h => `บ้าน ${h} ✓`).join('  ')}
-                </div>
-              )}
+            <div style={{ fontSize: '18px', color: 'var(--lh-ink-soft)', marginTop: '14px' }}>
+              เสร็จแล้ว <strong style={{ fontFamily: "'Cinzel', serif", fontSize: '26px', color: 'var(--lh-ink)' }}>{done.length}</strong> / {online.length} บ้าน
             </div>
-            {partNum > 1 && (
-              <div style={{ textAlign: 'left', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(217,174,110,0.35)', borderRadius: '16px', padding: '20px 24px', marginBottom: '32px' }}>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#D9AE6E', marginBottom: '10px' }}>☀️ เช้าวันใหม่ — ข่าวจากคืนที่ {partNum - 1}</div>
-                {nightNews(session, partNum - 1).map((line, i) => (
-                  <div key={i} style={{ fontSize: '17px', color: '#F6E8CD', padding: '4px 0' }}>{line}</div>
-                ))}
-              </div>
-            )}
-            <button
-              onClick={() => socket?.emit('hostStartNightMode')}
-              style={{
-                background: 'linear-gradient(135deg, #2c3e50, #000000)',
-                color: '#D9AE6E',
-                border: '2px solid #D9AE6E',
-                padding: '16px 40px',
-                borderRadius: '16px',
-                fontSize: '20px',
-                fontWeight: 'bold',
-                fontFamily: "'Noto Sans Thai', sans-serif",
-                cursor: 'pointer',
-                boxShadow: '0 8px 25px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(217, 174, 110, 0.3)'
-              }}
-            >
-              เข้าสู่คืนที่ {partNum} 🌙
-            </button>
           </div>
+
+          {partNum > 1 && (
+            <div className="lh-parchment lh-rise" style={{ width: '100%', maxWidth: '760px', padding: '20px 28px', transform: 'rotate(-0.6deg)', animationDelay: '0.4s' }}>
+              <div className="lh-display" style={{ fontSize: '20px', color: 'var(--lh-hood)', marginBottom: '8px' }}>เช้าวันใหม่ — ข่าวจากคืนที่ {partNum - 1}</div>
+              {nightNews(session, partNum - 1).map((line, i) => (
+                <div key={i} style={{ fontSize: '19px', padding: '3px 0' }}>{line}</div>
+              ))}
+            </div>
+          )}
+
+          {sign(<>เข้าสู่คืนที่ {partNum} 🌙</>, () => socket?.emit('hostStartNightMode'), 'lh-sign--night')}
         </div>
       );
     }
 
     if (session.state === 'NIGHT_MODE') {
-      const isAwake = session.awakeHouseId !== null && session.awakeHouseId !== undefined;
+      const awakeId = session.awakeHouseId ?? null;
+      const completedPart = session.lastCompletedPart || 1;
+      const isLastRound = completedPart === 5;
       return (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          height: '100%', minHeight: '60vh'
-        }}>
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(5, 10, 25, 0.95), rgba(0, 5, 15, 0.98))',
-            border: isAwake ? '3px solid rgba(217, 174, 110, 0.8)' : '3px solid rgba(112, 161, 255, 0.8)',
-            borderRadius: '40px',
-            padding: '80px',
-            maxWidth: '1000px',
-            textAlign: 'center',
-            boxShadow: isAwake 
-              ? '0 0 80px rgba(217, 174, 110, 0.4), inset 0 0 50px rgba(217, 174, 110, 0.2)'
-              : '0 0 80px rgba(112, 161, 255, 0.4), inset 0 0 50px rgba(112, 161, 255, 0.2)',
-            backdropFilter: 'blur(20px)',
-            transform: 'scale(1.05)',
-            transition: 'all 0.5s ease-in-out'
-          }}>
-            <h2 style={{ 
-              fontSize: '84px', 
-              fontFamily: "'Cinzel', serif", 
-              fontWeight: 'bold', 
-              color: isAwake ? '#F6E8CD' : '#D6E4FF', 
-              textShadow: isAwake 
-                ? '0 0 30px rgba(217,174,110,0.8), 0 0 10px rgba(217,174,110,0.5)'
-                : '0 0 30px rgba(112,161,255,0.8), 0 0 10px rgba(112,161,255,0.5)', 
-              marginBottom: '30px',
-              lineHeight: '1.2'
-            }}>
-              {isAwake ? `👁️ บ้านที่ ${session.awakeHouseId}` : '🌙 เข้าสู่โหมดกลางคืน...'}
-              {isAwake && <div style={{ fontSize: '64px', color: '#D9AE6E', marginTop: '15px' }}>ลืมตาขึ้น...</div>}
-            </h2>
-            <p style={{ 
-              fontSize: '32px', 
-              color: isAwake ? 'rgba(217,174,110,0.8)' : 'rgba(112,161,255,0.8)', 
-              fontStyle: 'italic',
-              fontWeight: '300',
-              letterSpacing: '2px'
-            }}>
-              {isAwake ? '✨ มีบางสิ่งที่กำลังจะเกิดขึ้นในความมืดมิด ✨' : '✨ ทุกบ้านหลับตาลงและรอฟังเสียงสวรรค์เรียกหา ✨'}
-            </p>
-            <div style={{ marginTop: '24px', fontSize: '22px', color: 'rgba(214,228,255,0.7)', letterSpacing: '2px' }}>
-              คืนที่ {session.lastCompletedPart || 1} / 5
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minHeight: '78vh', paddingTop: '22vh', gap: '18px', textAlign: 'center' }}>
+          {awakeId ? (
+            <div key={awakeId} className="lh-pop" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <img src={`/houses/${awakeId}.png`} alt="" className="lh-house is-lit" style={{ width: '300px', margin: '-60px 0 -70px' }} />
+              <h2 className="lh-display" style={{ fontSize: '64px', color: 'var(--lh-gold-bright)', textShadow: '0 0 40px rgba(243,213,138,0.6)' }}>บ้านที่ {awakeId} ลืมตา…</h2>
+              <p style={{ fontSize: '24px', color: 'rgba(246,232,205,0.8)', fontStyle: 'italic' }}>มีบางสิ่งกำลังเกิดขึ้นในความมืด</p>
             </div>
-          </div>
-          {(() => {
-            const completedPart = session.lastCompletedPart || 1;
-            const isLastRound = completedPart === 5;
-            return (
-              <button
-                onClick={() => isLastRound ? socket?.emit('hostFinishParts') : socket?.emit('hostStartPart', completedPart + 1)}
-                style={{
-                  marginTop: '40px',
-                  background: 'linear-gradient(135deg, #D9AE6E, #B88645)',
-                  color: '#1a1a1a',
-                  border: 'none',
-                  padding: '16px 40px',
-                  borderRadius: '16px',
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  fontFamily: "'Noto Sans Thai', sans-serif",
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 25px rgba(217, 174, 110, 0.6)'
-                }}
-              >
-                {isLastRound ? 'เสร็จสิ้น ดูผลสรุป 🏆' : `ถัดไป: Part ${completedPart + 1} ➡️`}
-              </button>
-            );
-          })()}
+          ) : (
+            <>
+              <div className="lh-title-in" style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '24px', letterSpacing: '0.4em', color: '#9FB4E0', animationDelay: '1.4s' }}>NIGHT {ROMAN[completedPart - 1]}</div>
+              <h2 className="lh-display lh-title-in" style={{ fontSize: '96px', color: '#E8EEFF', textShadow: '0 0 40px rgba(160,190,255,0.55)', animationDelay: '1.6s' }}>คืนที่ {completedPart}</h2>
+              <p className="lh-rise" style={{ fontSize: '26px', color: 'rgba(214,225,245,0.8)', animationDelay: '2.4s' }}>ทุกบ้านหลับตาลง… ฟังเสียงที่จะเรียกชื่อบ้านของคุณ</p>
+            </>
+          )}
+          <div style={{ flex: 1 }} />
+          {sign(isLastRound ? 'เสร็จสิ้น ดูผลสรุป 🏆' : `ถัดไป: Part ${completedPart + 1} →`, () => isLastRound ? socket?.emit('hostFinishParts') : socket?.emit('hostStartPart', completedPart + 1), 'lh-sign--night')}
         </div>
       );
     }
 
     if (session.state === 'FINISHED') {
-       // Sort houses by score
-       const sorted = Object.values(session.houses).sort((a, b) => b.score - a.score);
-       return (
-          <div style={{
-            background: 'linear-gradient(145deg, rgba(30, 48, 38, 0.95), rgba(10, 18, 11, 0.98))',
-            border: '2px solid #D9AE6E',
-            borderRadius: '32px',
-            padding: '48px',
-            maxWidth: '800px',
-            margin: '0 auto',
-            boxShadow: '0 20px 50px rgba(0,0,0,0.8), inset 0 0 30px rgba(217, 174, 110, 0.2)',
-            backdropFilter: 'blur(15px)'
-          }}>
-            <h2 style={{ fontSize: '42px', fontFamily: "'Cinzel', serif", fontWeight: 'bold', textAlign: 'center', color: '#D9AE6E', marginBottom: '40px', textShadow: '0 4px 15px rgba(0,0,0,0.8)' }}>
-              🏆 สรุปคะแนนรวมทั้งหมด (Post-test)
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {sorted.map((h, i) => (
-                <div key={h.houseId} style={{
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center', 
-                  padding: '20px 32px', 
-                  background: i === 0 ? 'linear-gradient(90deg, rgba(217, 174, 110, 0.3), rgba(217, 174, 110, 0.1))' : 'rgba(0,0,0,0.4)',
-                  borderRadius: '16px', 
-                  border: `1px solid ${i === 0 ? '#D9AE6E' : 'rgba(255,255,255,0.1)'}`,
-                  boxShadow: i === 0 ? '0 0 20px rgba(217, 174, 110, 0.2)' : 'none',
-                  transform: i === 0 ? 'scale(1.02)' : 'none',
-                  transition: 'all 0.3s'
-                }}>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: i === 0 ? '#D9AE6E' : '#F6E8CD' }}>
-                    อันดับ {i + 1} - บ้านที่ {h.houseId} {i === 0 && '👑'}
-                  </div>
-                  <div style={{ fontSize: '20px', color: i === 0 ? '#fff' : 'rgba(255,255,255,0.8)' }}>
-                    <strong>{h.score}</strong> คะแนน (ตอบถูก {h.correctAnswers}/5)
-                  </div>
-                </div>
-              ))}
-            </div>
-            <h3 style={{ fontSize: '26px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', margin: '40px 0 16px', textAlign: 'center' }}>
-              🌙 เรื่องราวตลอด 5 คืน
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '26px', alignItems: 'center' }}>
+          <div className="lh-parchment lh-flip" style={pageCard}>
+            <div className="lh-kicker" style={{ textAlign: 'center' }}>จบการเดินทาง</div>
+            <h2 className="lh-display" style={{ fontSize: '42px', textAlign: 'center', margin: '6px 0 26px' }}>อันดับหมู่บ้านทั้งหมด</h2>
+            <Ledger houses={Object.values(session.houses)} />
+          </div>
+          <div className="lh-parchment lh-rise" style={{ ...pageCard, animationDelay: '0.6s' }}>
+            <h3 className="lh-display" style={{ fontSize: '30px', textAlign: 'center', marginBottom: '16px' }}>เรื่องราวตลอด 5 คืน</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '14px' }}>
               {[1, 2, 3, 4, 5].map(n => (
-                <div key={n} style={{ background: 'rgba(0,0,0,0.35)', borderRadius: '12px', padding: '14px 20px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <div style={{ fontWeight: 'bold', color: '#D9AE6E', marginBottom: '6px' }}>คืนที่ {n} (หลัง Part {n}: {PART_TITLES[n]})</div>
-                  {nightNews(session, n).map((line, i) => (
-                    <div key={i} style={{ fontSize: '16px', color: '#F6E8CD', padding: '2px 0' }}>{line}</div>
-                  ))}
+                <div key={n} style={{ padding: '14px 18px', borderRadius: '8px', background: 'rgba(122,85,48,0.1)', border: '1px dashed rgba(122,85,48,0.45)' }}>
+                  <div className="lh-display" style={{ fontSize: '18px', color: 'var(--lh-hood)', marginBottom: '6px' }}>คืนที่ {n} <span style={{ fontFamily: 'inherit', fontSize: '14px', color: 'var(--lh-ink-soft)' }}>· หลัง {PART_TITLES[n]}</span></div>
+                  {nightNews(session, n).map((line, i) => <div key={i} style={{ fontSize: '16px', padding: '2px 0' }}>{line}</div>)}
                 </div>
               ))}
-            </div>
-            <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'center', gap: '24px' }}>
-              <button
-                onClick={() => socket?.emit('hostNewRound')}
-                style={{
-                  background: 'linear-gradient(135deg, #1E392A, #2D5A27)',
-                  color: '#F6E8CD',
-                  border: '2px solid #4ade80',
-                  padding: '16px 40px',
-                  borderRadius: '16px',
-                  fontSize: '22px',
-                  fontWeight: 'bold',
-                  fontFamily: "'Noto Sans Thai', sans-serif",
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 25px rgba(45, 90, 39, 0.6), inset 0 0 15px rgba(74, 222, 128, 0.3)'
-                }}
-              >
-                กลับห้องรอ (รีเซ็ตเกม) ↺
-              </button>
             </div>
           </div>
-       );
+          {sign('กลับห้องรอ (รีเซ็ตเกม) ↺', () => socket?.emit('hostNewRound'), 'lh-sign--quiet')}
+        </div>
+      );
     }
 
-    if (!question) return <div>กำลังโหลดข้อ...</div>;
+    if (!question) return <div className="lh-display lh-breathe" style={{ textAlign: 'center', fontSize: '24px', color: 'var(--lh-gold-bright)' }}>กำลังโหลดภารกิจ…</div>;
 
     const submittedCount = Object.values(session.houses).filter(h => h.hasSubmitted).length;
     const totalOnline = Object.values(session.houses).filter(h => h.isOnline).length;
+    const isOpen = session.state === 'QUESTION_OPEN';
+    const isReveal = session.state === 'REVEAL';
+    const pct = Math.max(0, Math.min(100, (timeRemaining / 30) * 100));
 
     return (
-      <div style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
-        {/* Header Bar */}
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          marginBottom: '40px',
-          padding: '24px 48px',
-          background: 'linear-gradient(135deg, rgba(30, 48, 38, 0.8) 0%, rgba(10, 18, 11, 0.95) 100%)',
-          backdropFilter: 'blur(16px)',
-          borderRadius: '24px',
-          border: '2px solid rgba(217, 174, 110, 0.4)',
-          borderBottom: '4px solid #D9AE6E',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.6), inset 0 0 20px rgba(217, 174, 110, 0.1)'
-        }}>
-          <div style={{ fontSize: '28px', color: '#D9AE6E', fontFamily: "'Cinzel', serif", fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-            ภารกิจที่ {session.currentQuestionIndex + 1} <span style={{opacity: 0.6, fontSize: '22px'}}>/ 5</span>
+      <div style={{ maxWidth: '1180px', margin: '0 auto', width: '100%', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+        <div key={session.currentQuestionIndex} className="lh-parchment lh-flip" style={{ padding: '30px 44px 36px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '24px', marginBottom: '22px' }}>
+            <div>
+              <div className="lh-kicker">ภารกิจที่ {session.currentQuestionIndex + 1} / 5</div>
+              <div style={{ fontSize: '18px', color: 'var(--lh-ink-soft)', marginTop: '4px' }}>ตอบแล้ว <strong style={{ fontFamily: "'Cinzel', serif", fontSize: '24px', color: 'var(--lh-ink)' }}>{submittedCount}</strong> / {totalOnline} บ้าน</div>
+            </div>
+            <div style={{ position: 'relative', width: '104px', height: '104px', borderRadius: '50%', background: `conic-gradient(${isOpen && timeRemaining <= 10 ? 'var(--lh-hood)' : '#8A5A1E'} ${isOpen ? pct * 3.6 : 0}deg, rgba(122,85,48,0.18) 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 1s linear', flexShrink: 0 }}>
+              <div style={{ width: '82px', height: '82px', borderRadius: '50%', background: 'var(--lh-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 8px rgba(90,55,25,0.3)' }}>
+                <span key={timeRemaining} className={isOpen && timeRemaining <= 10 ? 'lh-pop' : ''} style={{ fontFamily: isOpen ? "'Cinzel', serif" : 'var(--lh-display)', fontWeight: 700, fontSize: isOpen ? '36px' : '18px', color: isOpen && timeRemaining <= 10 ? 'var(--lh-hood)' : 'var(--lh-ink)' }}>
+                  {isOpen ? timeRemaining : 'หมดเวลา'}
+                </span>
+              </div>
+            </div>
           </div>
-          <div style={{ 
-            fontSize: '56px', 
-            fontWeight: 'bold', 
-            fontFamily: "'Cinzel', serif",
-            color: session.state === 'QUESTION_OPEN' && timeRemaining <= 10 ? '#ff4757' : '#F6E8CD',
-            textShadow: session.state === 'QUESTION_OPEN' && timeRemaining <= 10 ? '0 0 20px rgba(255, 71, 87, 0.6)' : '0 0 20px rgba(246, 232, 205, 0.4)',
-            lineHeight: 1
-          }}>
-            {session.state === 'QUESTION_OPEN' ? timeRemaining : 'หมดเวลา'}
-          </div>
-          <div style={{ fontSize: '24px', color: 'rgba(255,255,255,0.9)', fontWeight: 'bold' }}>
-            ตอบแล้ว <strong style={{ color: '#4ade80', fontSize: '32px', margin: '0 8px' }}>{submittedCount}</strong> / {totalOnline} บ้าน
-          </div>
-        </div>
 
-        {/* Question Box */}
-        <div style={{
-          background: 'linear-gradient(145deg, rgba(30, 48, 38, 0.85), rgba(15, 25, 20, 0.95))',
-          border: '2px solid rgba(217, 174, 110, 0.6)',
-          borderRadius: '32px',
-          padding: '48px',
-          marginBottom: '40px',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.7), inset 0 0 30px rgba(217, 174, 110, 0.15)',
-          position: 'relative',
-          backdropFilter: 'blur(20px)'
-        }}>
-          <h2 style={{ 
-            fontSize: '42px', 
-            fontWeight: 'bold', 
-            textAlign: 'center', 
-            marginBottom: '48px',
-            color: '#F6E8CD',
-            textShadow: '0 4px 12px rgba(0,0,0,0.8), 0 0 20px rgba(217, 174, 110, 0.3)',
-            lineHeight: '1.5'
-          }}>
-            {question.text}
-          </h2>
-          
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-            gap: '24px' 
-          }}>
+          <h2 className="lh-display" style={{ fontSize: '40px', lineHeight: 1.45, textAlign: 'center', margin: '0 0 30px' }}>{question.text}</h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '18px' }}>
             {question.options.map(opt => {
-              let isCorrect = false;
-              let isWrong = false;
-              if (session.state === 'REVEAL') {
-                 isCorrect = opt.key === question.correctKey;
-                 isWrong = !isCorrect;
-              }
-              
-              const optionColors: Record<string, string> = {
-                'ก': '#ff6b81',
-                'ข': '#7bed9f',
-                'ค': '#70a1ff',
-                'ง': '#eccc68'
-              };
-              
+              const isCorrect = isReveal && opt.key === question.correctKey;
+              const isWrong = isReveal && !isCorrect;
+              const st = OPTION_STYLE[opt.key] || OPTION_STYLE['ง'];
               return (
-                <div 
-                  key={opt.key} 
-                  style={{
-                    padding: '28px 36px',
-                    borderRadius: '20px',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '24px',
-                    fontSize: '28px',
-                    background: isCorrect ? 'linear-gradient(145deg, rgba(74, 222, 128, 0.4), rgba(74, 222, 128, 0.2))' : 'linear-gradient(145deg, rgba(30, 48, 38, 0.6), rgba(10, 18, 11, 0.8))',
-                    border: `2px solid ${isCorrect ? '#4ade80' : 'rgba(217, 174, 110, 0.3)'}`,
-                    opacity: isWrong ? 0.4 : 1,
-                    transform: isCorrect ? 'scale(1.02)' : 'scale(1)',
-                    boxShadow: isCorrect ? '0 0 30px rgba(74, 222, 128, 0.5), inset 0 0 20px rgba(74, 222, 128, 0.3)' : '0 8px 20px rgba(0,0,0,0.4)',
-                    transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-                  }}
-                >
-                  <span style={{ 
-                    fontWeight: 'bold', 
-                    color: optionColors[opt.key] || '#D9AE6E', 
-                    fontSize: '48px',
-                    textShadow: '0 4px 10px rgba(0,0,0,0.6)',
-                    lineHeight: 1
-                  }}>
-                    {opt.key}
-                  </span>
-                  <div style={{ flex: 1, fontWeight: 'bold', color: '#F6E8CD', letterSpacing: '0.02em' }}>{opt.text}</div>
+                <div key={opt.key} className={`lh-strip ${isCorrect ? 'is-right' : ''}`} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '20px', padding: '18px 22px', fontSize: '26px', cursor: 'default', opacity: isWrong ? 0.4 : 1, transition: 'opacity 0.5s' }}>
+                  <span className="lh-display" style={{ width: '62px', height: '62px', borderRadius: '50%', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: `radial-gradient(circle at 35% 30%, ${st.color}, ${st.dark} 78%)`, color: '#FBEBD2', fontSize: '30px', boxShadow: '0 4px 0 rgba(0,0,0,0.35)' }}>{opt.key}</span>
+                  <span style={{ fontWeight: 700 }}>{opt.text}</span>
+                  {isCorrect && <SparkleBurst style={{ right: '60px', top: '50%' }} />}
+                  {isCorrect && <span className="lh-stamp lh-display" style={{ position: 'absolute', right: '18px', top: '-16px', padding: '2px 12px', border: '3px double #2F6B3A', borderRadius: '8px', color: '#2F6B3A', background: 'rgba(243,231,203,0.95)', fontSize: '20px' }}>ถูกต้อง!</span>}
                 </div>
               );
             })}
           </div>
+
+          {isReveal && revealData?.explanation && (
+            <div className="lh-rise" style={{ marginTop: '24px', padding: '16px 22px', borderRadius: '8px', background: 'rgba(122,85,48,0.1)', border: '1px dashed rgba(122,85,48,0.5)', animationDelay: '0.5s' }}>
+              <div className="lh-display" style={{ fontSize: '20px', color: 'var(--lh-hood)', marginBottom: '4px' }}>คำอธิบาย</div>
+              <p style={{ fontSize: '19px', lineHeight: 1.6 }}>{revealData.explanation}</p>
+            </div>
+          )}
         </div>
-        
-        {session.state === 'REVEAL' && revealData && (
-           <div style={{
-             background: 'linear-gradient(145deg, rgba(217, 174, 110, 0.15), rgba(10, 18, 11, 0.8))',
-             border: '1px solid rgba(217, 174, 110, 0.3)',
-             borderLeft: '4px solid #D9AE6E',
-             padding: '24px 32px',
-             borderRadius: '12px 24px 24px 12px',
-             marginBottom: '32px',
-             backdropFilter: 'blur(10px)',
-             boxShadow: '0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px rgba(217, 174, 110, 0.1)'
-           }}>
-              <h3 style={{ fontSize: '22px', fontFamily: "'Cinzel', serif", fontWeight: 'bold', color: '#D9AE6E', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>✨ คำอธิบาย:</h3>
-              <p style={{ fontSize: '18px', color: '#F6E8CD', lineHeight: '1.6', opacity: 0.9 }}>{revealData.explanation}</p>
-           </div>
-        )}
 
-        {/* Footer: Houses & Actions */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            {Object.values(session.houses).map(h => {
-               if (!h.isOnline) return null;
-               
-               let resultIcon = '';
-               if (session.state === 'REVEAL' && revealData) {
-                 const res = revealData.houseResults[h.houseId];
-                 resultIcon = res?.correct ? '✅' : '❌';
-               }
-
-               const isCorrect = session.state === 'REVEAL' && revealData && revealData.houseResults[h.houseId]?.correct;
-               const isWrong = session.state === 'REVEAL' && revealData && !revealData.houseResults[h.houseId]?.correct;
-
-               return (
-                  <div key={h.houseId} style={{
-                    padding: '8px 20px',
-                    borderRadius: '20px',
-                    fontWeight: 'bold',
-                    fontSize: '16px',
-                    background: isCorrect ? 'rgba(74, 222, 128, 0.2)' : isWrong ? 'rgba(255, 71, 87, 0.2)' : h.hasSubmitted ? 'rgba(217, 174, 110, 0.2)' : 'rgba(0,0,0,0.5)',
-                    color: isCorrect ? '#4ade80' : isWrong ? '#ff4757' : h.hasSubmitted ? '#D9AE6E' : 'rgba(255,255,255,0.4)',
-                    border: `1px solid ${isCorrect ? 'rgba(74, 222, 128, 0.5)' : isWrong ? 'rgba(255, 71, 87, 0.5)' : h.hasSubmitted ? 'rgba(217, 174, 110, 0.5)' : 'rgba(255,255,255,0.1)'}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: isCorrect ? '0 0 15px rgba(74, 222, 128, 0.2)' : isWrong ? '0 0 15px rgba(255, 71, 87, 0.2)' : 'none'
-                  }}>
-                    บ้านที่ {h.houseId} {resultIcon}
-                  </div>
-               )
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {Object.values(session.houses).filter(h => h.isOnline).map(h => {
+              const res = isReveal && revealData ? revealData.houseResults[h.houseId] : null;
+              const lit = isReveal ? !!res?.correct : h.hasSubmitted;
+              return (
+                <div key={h.houseId} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '96px' }}>
+                  <img src={`/houses/${h.houseId}.png`} alt="" className={`lh-house ${lit ? 'is-lit' : 'is-dark'}`} style={{ width: '96px', margin: '-14px 0 -20px' }} />
+                  <span className="lh-plaque" style={{ padding: '2px 10px', fontSize: '14px', position: 'relative' }}>
+                    บ้าน {h.houseId} {isReveal && res ? (res.correct ? `+${res.scoreDelta}` : '✗') : (h.hasSubmitted ? '✓' : '')}
+                  </span>
+                </div>
+              );
             })}
           </div>
-          
           <div>
-            {session.state === 'QUESTION_CLOSED' && (
-              <button 
-                onClick={() => socket?.emit('hostReveal')}
-                style={{
-                  background: 'linear-gradient(135deg, #D9AE6E, #B88645)',
-                  color: '#1a1a1a',
-                  border: 'none',
-                  padding: '14px 28px',
-                  borderRadius: '12px',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 15px rgba(217, 174, 110, 0.4)'
-                }}
-              >
-                เปิดเฉลย
-              </button>
-            )}
-            {session.state === 'REVEAL' && (
-              <button 
-                onClick={() => socket?.emit('hostNextQuestion')}
-                style={{
-                  background: 'linear-gradient(135deg, #1E392A, #2D5A27)',
-                  color: '#F6E8CD',
-                  border: '2px solid #4ade80',
-                  padding: '16px 32px',
-                  borderRadius: '16px',
-                  fontSize: '20px',
-                  fontWeight: 'bold',
-                  fontFamily: "'Noto Sans Thai', sans-serif",
-                  cursor: 'pointer',
-                  boxShadow: '0 8px 25px rgba(45, 90, 39, 0.6), inset 0 0 15px rgba(74, 222, 128, 0.3)'
-                }}
-              >
-                {session.currentQuestionIndex >= 4 ? 'ดูผลสรุป' : 'ข้อถัดไป'} ➔
-              </button>
-            )}
+            {session.state === 'QUESTION_CLOSED' && sign('เปิดเฉลย ✨', () => socket?.emit('hostReveal'), 'lh-glow-pulse')}
+            {isReveal && sign(session.currentQuestionIndex >= 4 ? 'ดูผลสรุป →' : 'ข้อถัดไป →', () => socket?.emit('hostNextQuestion'))}
           </div>
         </div>
       </div>
@@ -818,46 +363,33 @@ const HostView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen forest-bg flex flex-col p-4">
-      <header className="flex justify-between items-center mb-6 relative">
-        <h1 className="host-title">Little Hood: Into the Woods</h1>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <button 
+    <ForestScene night={session.state === 'NIGHT_MODE' && activeTab === 'QUIZ'} fireflies={14} style={{ display: 'flex', flexDirection: 'column', padding: '20px 32px 40px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ fontFamily: "'Cinzel', serif", fontWeight: 800, fontSize: '40px', lineHeight: 1, color: 'var(--lh-gold-bright)', textShadow: '0 3px 0 rgba(0,0,0,0.6), 0 0 24px rgba(0,0,0,0.6)' }}>Little Hood</h1>
+          <div className="lh-display" style={{ fontSize: '16px', color: 'var(--lh-cream)', textShadow: '0 1px 6px rgba(0,0,0,0.9)', marginTop: '4px' }}>บอร์ดเกมนิทานป่าลึก</div>
+        </div>
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+          {renderTabs()}
+          <button
+            className="lh-tab"
             onClick={() => {
               if (window.confirm('คุณต้องการรีเซ็ตเกมและลบคะแนนทั้งหมด กลับไปเริ่มใหม่(LOBBY)หรือไม่?')) {
                 socket?.emit('hostNewRound');
               }
             }}
-            style={{
-              background: 'rgba(255, 71, 87, 0.2)',
-              border: '1px solid #ff4757',
-              color: '#ff4757',
-              padding: '8px 16px',
-              borderRadius: '12px',
-              fontWeight: 'bold',
-              fontSize: '16px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              backdropFilter: 'blur(4px)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 71, 87, 0.4)'}
-            onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 71, 87, 0.2)'}
+            style={{ color: '#F4B3B3', fontFamily: 'inherit', fontWeight: 700 }}
           >
-            <span style={{ fontSize: '20px' }}>🔄</span> รีเซ็ตเกมใหม่
+            ↺ รีเซ็ตเกม
           </button>
           <AdminSettingsButton onClick={() => setShowAdminModal(true)} />
         </div>
       </header>
-      
-      {renderTabs()}
-      
-      <div className="flex-1 w-full relative">
+
+      <main style={{ flex: 1, width: '100%' }}>
         {activeTab === 'LOBBY' && renderLobbyTab()}
         {activeTab === 'QUIZ' && renderQuizTab()}
-      </div>
+      </main>
 
       <AdminControlModal 
         isOpen={showAdminModal}
@@ -933,7 +465,7 @@ const HostView: React.FC = () => {
           </button>
         </div>
       )}
-    </div>
+    </ForestScene>
   );
 };
 

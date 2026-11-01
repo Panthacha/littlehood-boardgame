@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
-import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Chips, Label, SummaryCard, Loading, labelOf, toggleIn, isQuizCorrect, fmt, goldBtn, GOLD } from './kit';
+import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Chips, Label, SummaryCard, Loading, labelOf, toggleIn, isQuizCorrect, fmt, GOLD } from './kit';
 import { PART_QUIZZES, PROBLEMS, STANCES, FREQUENCIES, OUTCOMES } from './content';
 
 interface Part5Data {
@@ -22,17 +22,17 @@ const PresentTimer: React.FC = () => {
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [running]);
-  const color = seconds > 90 ? '#ff9b9b' : seconds >= 60 ? '#4ade80' : '#F6E8CD';
+  const color = seconds > 90 ? '#A8233A' : seconds >= 60 ? '#2F6B3A' : '#2B1D12';
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px', padding: '28px', background: 'rgba(0,0,0,0.25)', borderRadius: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px', padding: '24px 16px', background: 'rgba(122,85,48,0.12)', border: '1px dashed rgba(122,85,48,0.45)', borderRadius: '10px' }}>
       <div style={{ fontFamily: "'Cinzel', serif", fontSize: '52px', fontWeight: 'bold', color }}>{fmt(seconds)}</div>
-      <div style={{ width: '100%', maxWidth: '360px', height: '10px', borderRadius: '999px', background: 'rgba(217,174,110,0.15)', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${Math.min(100, Math.round((seconds / 90) * 100))}%`, background: 'linear-gradient(90deg, #D9AE6E, #9D3543)', transition: 'width 1s linear' }} />
+      <div style={{ width: '100%', maxWidth: '360px', height: '10px', borderRadius: '999px', background: 'rgba(122,85,48,0.15)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${Math.min(100, Math.round((seconds / 90) * 100))}%`, background: 'linear-gradient(90deg, #8A5A1E, #9D3543)', transition: 'width 1s linear' }} />
       </div>
-      {!running && seconds === 0 && <button onClick={() => setRunning(true)} style={goldBtn}>เริ่มพูด</button>}
-      {running && <button onClick={() => setRunning(false)} style={{ ...goldBtn, background: 'rgba(0,0,0,0.4)', color: '#F6E8CD', border: '1px solid rgba(246,232,205,0.3)' }}>พูดจบแล้ว</button>}
+      {!running && seconds === 0 && <button className="lh-sign" onClick={() => setRunning(true)}>เริ่มพูด</button>}
+      {running && <button className="lh-sign lh-sign--quiet" onClick={() => setRunning(false)}>พูดจบแล้ว</button>}
       {!running && seconds > 0 && <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color }}>ใช้เวลา {seconds} วินาที {seconds >= 60 && seconds <= 90 ? '— พอดีเป๊ะ! 👏' : ''}</p>}
-      <p style={{ margin: 0, fontSize: '13px', color: 'rgba(246,232,205,0.6)' }}>เป้าหมาย 60-90 วินาที (เขียว = อยู่ในช่วง)</p>
+      <p style={{ margin: 0, fontSize: '13px', color: 'rgba(43,29,18,0.6)' }}>เป้าหมาย 60-90 วินาที (เขียว = อยู่ในช่วง)</p>
     </div>
   );
 };
@@ -62,7 +62,7 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
   const missions = [1, 2, 3, 4].filter((p) => allParts[p]?.completedAt).length + 1;
   const bars = [
     { label: 'คะแนนความรู้', value: knowledge, max: 9, unit: `${knowledge} / 9 ข้อ`, color: GOLD },
-    { label: 'คะแนนภารกิจ', value: missions, max: 5, unit: `${missions} / 5 พาร์ท`, color: '#4ade80' },
+    { label: 'คะแนนภารกิจ', value: missions, max: 5, unit: `${missions} / 5 พาร์ท`, color: '#2F6B3A' },
     { label: 'เหรียญจากบทบาท', value: Math.max(0, house?.score || 0), max: 1000, unit: `${house?.score || 0} เหรียญ`, color: '#9D3543' }
   ];
 
@@ -94,8 +94,8 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
             <div style={{ display: 'flex', gap: '8px' }}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <button key={n} aria-label={`${n} ดาว`} onClick={() => update({ stars: n })} style={{
-                  width: '48px', height: '48px', borderRadius: '12px', border: '1px solid rgba(217,174,110,0.3)', fontSize: '22px', cursor: 'pointer',
-                  background: n <= data.stars ? 'rgba(217,174,110,0.25)' : 'rgba(0,0,0,0.3)', color: n <= data.stars ? GOLD : 'rgba(246,232,205,0.3)'
+                  width: '48px', height: '48px', borderRadius: '12px', border: '1px solid rgba(122,85,48,0.3)', fontSize: '22px', cursor: 'pointer',
+                  background: n <= data.stars ? 'rgba(122,85,48,0.25)' : 'rgba(122,85,48,0.1)', color: n <= data.stars ? GOLD : 'rgba(43,29,18,0.3)'
                 }}>★</button>
               ))}
             </div>
@@ -135,23 +135,24 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
 
       {step === LAST && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', textAlign: 'center', padding: '12px 0' }}>
-          <h3 style={{ margin: 0, fontSize: '22px', fontFamily: "'Cinzel', serif" }}>🏡 ทีมพาคุณยายกลับบ้านปลอดภัยสำเร็จ!</h3>
+          <img src={`/houses/${houseId}.png`} alt="" className="lh-house is-lit" style={{ width: '180px', margin: '-24px 0 -36px' }} />
+          <h3 className="lh-display" style={{ margin: 0, fontSize: '22px' }}>ทีมพาคุณยายกลับบ้านปลอดภัยสำเร็จ!</h3>
           <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {bars.map((b) => (
               <div key={b.label} style={{ textAlign: 'left' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}>
                   <span style={{ color: GOLD }}>{b.label}</span><span>{b.unit}</span>
                 </div>
-                <div style={{ height: '14px', borderRadius: '999px', background: 'rgba(217,174,110,0.12)', overflow: 'hidden' }}>
+                <div style={{ height: '14px', borderRadius: '999px', background: 'rgba(122,85,48,0.12)', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${Math.min(100, (b.value / b.max) * 100)}%`, background: b.color }} />
                 </div>
               </div>
             ))}
           </div>
           {!data.signaled ? (
-            <button onClick={() => update({ signaled: true })} style={{ ...goldBtn, background: 'linear-gradient(135deg, #9D3543, #6D1E26)', color: '#F6E8CD' }}>ส่งสัญญาณจบกิจกรรมให้ครู</button>
+            <button className="lh-sign lh-sign--hood lh-glow-pulse" onClick={() => update({ signaled: true })}>ส่งสัญญาณจบกิจกรรมให้ครู</button>
           ) : (
-            <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#4ade80' }}>✓ ส่งสัญญาณแล้ว รอผู้สอนพาเข้าสู่คืนสุดท้ายบนจอใหญ่</p>
+            <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#2F6B3A' }}>✓ ส่งสัญญาณแล้ว รอผู้สอนพาเข้าสู่คืนสุดท้ายบนจอใหญ่</p>
           )}
         </div>
       )}

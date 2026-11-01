@@ -1,19 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
+import { SparkleBurst, Trail } from '../../theme/Forest';
 
-// Shared building blocks for Parts 2-5 (Part 1 predates this and keeps its
-// own copy). Each Part is a stepper whose answers are saved per house to
+// Shared building blocks for the Part screens, drawn as a parchment page
+// (theme/forest.css). Each Part is a stepper whose answers are saved per house to
 // Supabase via savePartProgress, so a refresh/reconnect resumes where the
 // team left off, and later Parts can read earlier Parts' answers.
 
 export type SavedParts = Record<number, { step: number; data: Record<string, any>; completedAt: string | null }>;
 
-export const GOLD = '#D9AE6E';
-export const CREAM = '#F6E8CD';
-const inputStyle: React.CSSProperties = {
-  minHeight: '48px', padding: '0 16px', borderRadius: '12px', border: '1px solid rgba(217,174,110,0.35)',
-  background: 'rgba(0,0,0,0.3)', color: CREAM, fontSize: '15px', fontFamily: 'inherit'
-};
+// Colors for content on parchment
+export const GOLD = '#8A5A1E';   // accent / labels
+export const CREAM = '#2B1D12';  // ink
 
 export function usePartProgress<T extends Record<string, any>>(houseId: number, partNumber: number, empty: T, lastStep: number) {
   const { socket } = useSocket();
@@ -71,34 +69,25 @@ export const PartShell: React.FC<{
   part: number; title: string; step: number; totalSteps: number;
   canAdvance: boolean; nextLabel: string; onBack: () => void; onNext: () => void; children: React.ReactNode;
 }> = ({ part, title, step, totalSteps, canAdvance, nextLabel, onBack, onNext, children }) => (
-  <div style={{ width: '100%', maxWidth: '640px', color: CREAM, display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '110px', textAlign: 'left' }}>
-    <div>
-      <div style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: GOLD, fontWeight: 'bold', marginBottom: '6px' }}>พาร์ท {part}</div>
-      <h2 style={{ margin: '0 0 12px', fontFamily: "'Cinzel', serif", fontSize: '22px' }}>{title}</h2>
-      <div style={{ display: 'flex', gap: '6px' }}>
-        {Array.from({ length: totalSteps }, (_, i) => (
-          <div key={i} style={{ flex: 1, height: '6px', borderRadius: '999px', background: i <= step ? GOLD : 'rgba(217,174,110,0.2)' }} />
-        ))}
+  <div style={{ width: '100%', maxWidth: '640px', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '120px', textAlign: 'left' }}>
+    {/* key={step}: each step turns in like a new page */}
+    <div key={step} className="lh-parchment lh-flip" style={{ padding: '24px 20px 26px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+        <div>
+          <div className="lh-kicker">พาร์ท {part} · ด่าน {Math.min(step + 1, totalSteps)} / {totalSteps}</div>
+          <h2 className="lh-display" style={{ margin: '4px 0 0', fontSize: '24px', lineHeight: 1.3 }}>{title}</h2>
+        </div>
+        <span className="lh-seal" aria-hidden="true" style={{ width: '48px', height: '48px', fontSize: '18px', flexShrink: 0 }}>{['I', 'II', 'III', 'IV', 'V'][part - 1]}</span>
       </div>
+      <Trail steps={totalSteps} current={step} />
+      {children}
     </div>
-    {children}
     {step < totalSteps - 1 && (
-      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: 'linear-gradient(0deg, #0A120B 60%, rgba(10,18,11,0))', padding: '16px 20px 20px', zIndex: 20 }}>
+      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, background: 'linear-gradient(0deg, rgba(6,12,8,0.95) 55%, rgba(6,12,8,0))', padding: '18px 16px 20px', zIndex: 20 }}>
         <div style={{ maxWidth: '640px', margin: '0 auto', display: 'flex', gap: '10px' }}>
-          {step > 0 && (
-            <button onClick={onBack} style={{ minHeight: '48px', padding: '0 20px', borderRadius: '12px', border: '1px solid rgba(246,232,205,0.3)', background: 'rgba(0,0,0,0.3)', color: 'rgba(246,232,205,0.85)', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer' }}>ย้อนกลับ</button>
-          )}
-          <button
-            onClick={() => canAdvance && onNext()}
-            disabled={!canAdvance}
-            style={{
-              flex: 1, minHeight: '48px', borderRadius: '12px', border: 'none',
-              background: canAdvance ? 'linear-gradient(135deg, #D9AE6E, #BCA16B)' : 'rgba(255,255,255,0.08)',
-              color: canAdvance ? '#101D18' : 'rgba(255,255,255,0.3)',
-              fontSize: '16px', fontWeight: 'bold', cursor: canAdvance ? 'pointer' : 'not-allowed'
-            }}
-          >
-            {nextLabel}
+          {step > 0 && <button className="lh-sign lh-sign--quiet" onClick={onBack}>ย้อนกลับ</button>}
+          <button className="lh-sign" onClick={() => canAdvance && onNext()} disabled={!canAdvance} style={{ flex: 1 }}>
+            {nextLabel}{canAdvance ? ' →' : ''}
           </button>
         </div>
       </div>
@@ -108,25 +97,25 @@ export const PartShell: React.FC<{
 
 export const Section: React.FC<{ title?: string; children: React.ReactNode }> = ({ title, children }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-    {title && <h3 style={{ margin: 0, fontSize: '19px' }}>{title}</h3>}
+    {title && <h3 className="lh-display" style={{ margin: 0, fontSize: '19px', lineHeight: 1.35 }}>{title}</h3>}
     {children}
   </div>
 );
 
 export const Note: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <p style={{ margin: 0, fontSize: '15px', color: 'rgba(246,232,205,0.75)', lineHeight: 1.7 }}>{children}</p>
+  <p style={{ margin: 0, fontSize: '15px', color: 'var(--lh-ink-soft)', lineHeight: 1.7 }}>{children}</p>
 );
 
 export const Box: React.FC<{ children: React.ReactNode; highlight?: boolean }> = ({ children, highlight }) => (
   <div style={{
-    background: highlight ? 'rgba(217,174,110,0.1)' : 'rgba(0,0,0,0.3)',
-    border: `1px solid ${highlight ? 'rgba(217,174,110,0.45)' : 'rgba(217,174,110,0.25)'}`,
-    borderRadius: '16px', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '15px', lineHeight: 1.7
+    background: highlight ? 'rgba(168,35,58,0.08)' : 'rgba(122,85,48,0.1)',
+    border: `1px dashed ${highlight ? 'rgba(168,35,58,0.45)' : 'rgba(122,85,48,0.45)'}`,
+    borderRadius: '8px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '15px', lineHeight: 1.7
   }}>{children}</div>
 );
 
 export const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ fontSize: '13px', fontWeight: 'bold', color: GOLD }}>{children}</div>
+  <div style={{ fontSize: '14px', fontWeight: 'bold', color: GOLD }}>{children}</div>
 );
 
 export interface QuizDef { question: string; options: { id: string; text: string; correct: boolean }[] }
@@ -134,45 +123,50 @@ export interface QuizDef { question: string; options: { id: string; text: string
 export const isQuizCorrect = (quiz: QuizDef, picked?: string | null) =>
   !!picked && !!quiz.options.find((o) => o.id === picked)?.correct;
 
-export const Quiz: React.FC<{ quiz: QuizDef; picked: string | null; onPick: (id: string) => void }> = ({ quiz, picked, onPick }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-    <div style={{ fontSize: '15px', fontWeight: 'bold' }}>เช็กความเข้าใจ: {quiz.question}</div>
-    {quiz.options.map((o) => {
-      let border = '1px solid rgba(217,174,110,0.25)';
-      let bg = 'rgba(0,0,0,0.3)';
-      if (picked) {
-        if (o.correct) { border = '1px solid rgba(74,222,128,0.6)'; bg = 'rgba(74,222,128,0.12)'; }
-        else if (picked === o.id) { border = '1px solid rgba(255,107,107,0.6)'; bg = 'rgba(255,107,107,0.12)'; }
-      }
-      return (
-        <button key={o.id} onClick={() => !picked && onPick(o.id)} style={{ textAlign: 'left', minHeight: '48px', padding: '12px 16px', borderRadius: '12px', border, background: bg, color: CREAM, fontSize: '14px', cursor: picked ? 'default' : 'pointer' }}>
-          {o.text}{picked && o.correct ? ' ✓' : ''}
-        </button>
-      );
-    })}
-    {picked && (
-      <div style={{ fontSize: '14px', fontWeight: 'bold', color: isQuizCorrect(quiz, picked) ? '#4ade80' : GOLD }}>
-        {isQuizCorrect(quiz, picked) ? 'ถูกต้อง! เก่งมาก 🎉' : 'ยังไม่ใช่ — คำตอบที่ถูกคือข้อสีเขียว'}
-      </div>
-    )}
-  </div>
-);
+export const Quiz: React.FC<{ quiz: QuizDef; picked: string | null; onPick: (id: string) => void }> = ({ quiz, picked, onPick }) => {
+  // Only celebrate a pick made on this screen, not one restored from saved progress.
+  const [fresh, setFresh] = useState(false);
+  const right = isQuizCorrect(quiz, picked);
+  return (
+    <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ fontSize: '15px', fontWeight: 'bold' }}>เช็กความเข้าใจ: {quiz.question}</div>
+      {quiz.options.map((o, i) => {
+        const cls = picked ? (o.correct ? 'is-right' : picked === o.id ? 'is-wrong' : '') : '';
+        return (
+          <div key={o.id} style={{ position: 'relative' }}>
+            <button className={`lh-strip ${cls}`} disabled={!!picked} onClick={() => { setFresh(true); onPick(o.id); }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: picked ? 'default' : 'pointer', opacity: 1, filter: 'none' }}>
+              <span aria-hidden="true" style={{ width: '26px', height: '26px', borderRadius: '50%', border: '2px solid #7A5530', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cinzel', serif", fontSize: '12px', fontWeight: 700, color: '#7A5530', flexShrink: 0 }}>{'ABC'[i]}</span>
+              <span>{o.text}</span>
+            </button>
+            {fresh && right && o.correct && <SparkleBurst style={{ right: '34px', top: '26px' }} />}
+          </div>
+        );
+      })}
+      {picked && (right ? (
+        <div className="lh-stamp lh-display" style={{ alignSelf: 'flex-end', marginTop: '4px', padding: '4px 14px', border: '3px double #2F6B3A', borderRadius: '8px', color: '#2F6B3A', fontSize: '20px' }}>ถูกต้อง!</div>
+      ) : (
+        <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--lh-hood)' }}>ยังไม่ใช่ — คำตอบที่ถูกคือแถบสีทอง</div>
+      ))}
+    </div>
+  );
+};
 
 export const Field: React.FC<{ label: string; value: string; onChange: (v: string) => void; placeholder?: string; multiline?: boolean }> =
   ({ label, value, onChange, placeholder, multiline }) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <label style={{ fontSize: '13px', fontWeight: 'bold', color: GOLD }}>{label}</label>
+    <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <span style={{ fontSize: '14px', fontWeight: 'bold', color: GOLD }}>{label}</span>
       {multiline ? (
-        <textarea rows={3} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={{ ...inputStyle, padding: '14px 16px', lineHeight: 1.6, resize: 'vertical' }} />
+        <textarea className="lh-input" rows={3} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
       ) : (
-        <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={inputStyle} />
+        <input className="lh-input" type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
       )}
-    </div>
+    </label>
   );
 
-// Multi-select chips
 export const toggleIn = (list: string[], item: string) => list.includes(item) ? list.filter((v) => v !== item) : [...list, item];
 
+// Multi-select chips
 export const Chips: React.FC<{ label: string; options: string[]; value: string[]; onToggle: (option: string) => void }> = ({ label, options, value, onToggle }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
     <Label>{label}</Label>
@@ -180,11 +174,10 @@ export const Chips: React.FC<{ label: string; options: string[]; value: string[]
       {options.map((o) => {
         const on = value.includes(o);
         return (
-          <button key={o} onClick={() => onToggle(o)} style={{
-            minHeight: '40px', padding: '0 16px', borderRadius: '999px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer',
-            border: on ? `1px solid ${GOLD}` : '1px solid rgba(217,174,110,0.25)',
-            background: on ? 'rgba(217,174,110,0.2)' : 'rgba(0,0,0,0.3)', color: on ? CREAM : 'rgba(246,232,205,0.7)'
-          }}>{on ? '✓ ' : ''}{o}</button>
+          <button key={o} aria-pressed={on} onClick={() => onToggle(o)} className={`lh-strip ${on ? 'is-on' : ''}`}
+            style={{ width: 'auto', minHeight: '42px', padding: '0 16px', borderRadius: '999px', fontSize: '14px', fontWeight: 'bold' }}>
+            {on ? '✓ ' : ''}{o}
+          </button>
         );
       })}
     </div>
@@ -199,10 +192,10 @@ export const Pills: React.FC<{ label: string; options: { id: string; label: stri
       {options.map((o) => {
         const on = value === o.id;
         return (
-          <button key={o.id} onClick={() => onChange(o.id)} style={{
-            flex: '1 1 140px', minHeight: '48px', borderRadius: '12px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', color: CREAM,
-            border: on ? `2px solid ${GOLD}` : '1px solid rgba(217,174,110,0.25)', background: on ? 'rgba(217,174,110,0.18)' : 'rgba(0,0,0,0.3)'
-          }}>{o.label}</button>
+          <button key={o.id} aria-pressed={on} onClick={() => onChange(o.id)} className={`lh-strip ${on ? 'is-on' : ''}`}
+            style={{ flex: '1 1 130px', width: 'auto', textAlign: 'center', fontWeight: 'bold' }}>
+            {o.label}
+          </button>
         );
       })}
     </div>
@@ -224,28 +217,29 @@ export const CountdownTimer: React.FC<{ seconds: number; doneText: string }> = (
     }), 1000);
     return () => clearInterval(t);
   }, [status]);
+  const pct = Math.round((left / seconds) * 100);
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', padding: '24px', background: 'rgba(0,0,0,0.25)', borderRadius: '20px' }}>
-      <div style={{ fontFamily: "'Cinzel', serif", fontSize: '52px', fontWeight: 'bold', color: status === 'done' ? '#ff9b9b' : CREAM }}>{fmt(left)}</div>
-      {status === 'idle' && <button onClick={() => setStatus('running')} style={goldBtn}>เริ่มจับเวลา ({Math.round(seconds / 60)} นาที)</button>}
-      {status === 'running' && <p style={{ margin: 0, fontSize: '13px', color: 'rgba(246,232,205,0.6)' }}>กำลังจับเวลา...</p>}
-      {status === 'done' && <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#ff9b9b', textAlign: 'center' }}>{doneText}</p>}
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', padding: '22px 16px', borderRadius: '10px', background: 'rgba(122,85,48,0.12)', border: '1px dashed rgba(122,85,48,0.45)' }}>
+      {/* hourglass-style ring */}
+      <div style={{ position: 'relative', width: '150px', height: '150px', borderRadius: '50%', background: `conic-gradient(${status === 'done' ? 'var(--lh-hood)' : '#8A5A1E'} ${pct * 3.6}deg, rgba(122,85,48,0.18) 0)`, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 1s linear' }}>
+        <div style={{ width: '122px', height: '122px', borderRadius: '50%', background: 'var(--lh-paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 8px rgba(90,55,25,0.3)' }}>
+          <span style={{ fontFamily: "'Cinzel', serif", fontSize: '34px', fontWeight: 700, color: status === 'done' ? 'var(--lh-hood)' : 'var(--lh-ink)' }}>{fmt(left)}</span>
+        </div>
+      </div>
+      {status === 'idle' && <button className="lh-sign" onClick={() => setStatus('running')}>เริ่มจับเวลา ({Math.round(seconds / 60)} นาที)</button>}
+      {status === 'running' && <p className="lh-breathe" style={{ margin: 0, fontSize: '14px', color: 'var(--lh-ink-soft)' }}>เม็ดทรายกำลังไหล…</p>}
+      {status === 'done' && <p className="lh-pop" style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: 'var(--lh-hood)', textAlign: 'center' }}>{doneText}</p>}
     </div>
   );
 };
 
 export const fmt = (s: number) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
-export const goldBtn: React.CSSProperties = {
-  minHeight: '52px', padding: '0 32px', borderRadius: '14px', border: 'none',
-  background: 'linear-gradient(135deg, #D9AE6E, #BCA16B)', color: '#101D18', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer'
-};
-
 export const SummaryCard: React.FC<{ rows: [string, React.ReactNode][] }> = ({ rows }) => (
-  <div style={{ width: '100%', background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(217,174,110,0.35)', borderRadius: '16px', padding: '18px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-    {rows.map(([k, v]) => (
-      <div key={k}>
-        <div style={{ fontSize: '11px', color: GOLD, fontWeight: 'bold' }}>{k}</div>
+  <div style={{ width: '100%', background: 'rgba(255,250,238,0.5)', border: '1px solid rgba(122,85,48,0.35)', borderRadius: '8px', padding: '6px 16px', textAlign: 'left', display: 'flex', flexDirection: 'column' }}>
+    {rows.map(([k, v], i) => (
+      <div key={k} style={{ padding: '10px 0', borderTop: i ? '1px dashed rgba(122,85,48,0.35)' : 'none' }}>
+        <div style={{ fontSize: '12px', color: GOLD, fontWeight: 'bold', letterSpacing: '0.04em' }}>{k}</div>
         <div style={{ fontSize: '15px', lineHeight: 1.6 }}>{v || '—'}</div>
       </div>
     ))}
@@ -253,12 +247,12 @@ export const SummaryCard: React.FC<{ rows: [string, React.ReactNode][] }> = ({ r
 );
 
 export const DoneScreen: React.FC<{ title: string; subtitle: string; children?: React.ReactNode }> = ({ title, subtitle, children }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '18px', textAlign: 'center', padding: '20px 0' }}>
-    <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'rgba(74,222,128,0.15)', border: '2px solid #4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: '#4ade80' }}>✓</div>
-    <h3 style={{ margin: 0, fontSize: '19px' }}>{title}</h3>
-    <p style={{ margin: 0, fontSize: '14px', color: 'rgba(246,232,205,0.7)' }}>{subtitle}</p>
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', textAlign: 'center', padding: '6px 0' }}>
+    <span className="lh-seal lh-stamp lh-display" aria-hidden="true" style={{ width: '88px', height: '88px', fontFamily: 'var(--lh-display)', fontSize: '17px', fontWeight: 400 }}>สำเร็จ</span>
+    <h3 className="lh-display" style={{ margin: 0, fontSize: '21px' }}>{title}</h3>
+    <p style={{ margin: 0, fontSize: '14px', color: 'var(--lh-ink-soft)', lineHeight: 1.6 }}>{subtitle}</p>
     {children}
   </div>
 );
 
-export const Loading = () => <div style={{ color: CREAM, textAlign: 'center', padding: '40px' }}>กำลังโหลด...</div>;
+export const Loading = () => <div className="lh-display lh-breathe" style={{ color: 'var(--lh-gold-bright)', textAlign: 'center', padding: '40px' }}>กำลังเปิดหน้ากระดาษ…</div>;

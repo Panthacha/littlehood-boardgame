@@ -48,12 +48,12 @@ const Part3: React.FC<{ houseId: number }> = ({ houseId }) => {
       {step === 1 && (
         <Section title="ด่านที่ 1 — กลไกคืออะไร">
           <Box>
-            <div><strong style={{ color: '#D9AE6E' }}>Mechanic</strong> คือวิธีที่ผู้เล่นโต้ตอบกับเกม</div>
-            <div><strong style={{ color: '#D9AE6E' }}>Rule</strong> คือข้อกำหนดที่ควบคุมกลไกนั้นให้เล่นได้จริง</div>
+            <div><strong style={{ color: '#8A5A1E' }}>Mechanic</strong> คือวิธีที่ผู้เล่นโต้ตอบกับเกม</div>
+            <div><strong style={{ color: '#8A5A1E' }}>Rule</strong> คือข้อกำหนดที่ควบคุมกลไกนั้นให้เล่นได้จริง</div>
           </Box>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
             {MECHANICS.map((m, i) => (
-              <div key={m} style={{ background: 'rgba(0,0,0,0.25)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textAlign: 'center' }}>
+              <div key={m} style={{ background: 'rgba(122,85,48,0.1)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textAlign: 'center' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: MONO_COLORS[i], display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px' }}>{m.slice(0, 2)}</div>
                 <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{m}</div>
               </div>

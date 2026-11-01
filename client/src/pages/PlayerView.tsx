@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { nightNews } from '../utils/nightRecap';
+import { ForestScene } from '../theme/Forest';
 import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
 import Part1 from './parts/Part1';
 import Part2 from './parts/Part2';
@@ -17,6 +18,12 @@ const roleData = {
   WOODCUTTER: { name: 'คนตัดไม้', hint: 'การตัดสินใจของฉันเกิดขึ้นจากสิ่งที่พบ ไม่ใช่จากคำขอของคนที่เกี่ยวข้อง', skillName: 'ค้นหาบ้านหมาป่า', icon: <Eye /> },
   WITCH: { name: 'แม่มด', hint: 'การพบฉันอาจเป็นจุดเริ่มต้นของความหวัง หรือจุดสิ้นสุดของทุกอย่าง', skillName: 'ใช้เวทมนตร์ (ช่วย หรือ ฆ่า)', icon: <Triangle /> }
 };
+
+// Parchment card for the simple waiting/result states. Defined at module level
+// so it isn't remounted (and its page-turn animation replayed) on every update.
+const Card: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="lh-parchment lh-flip" style={{ padding: '30px 24px', textAlign: 'center', width: '100%', maxWidth: '400px' }}>{children}</div>
+);
 
 const PlayerView: React.FC = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
@@ -108,129 +115,126 @@ const PlayerView: React.FC = () => {
   };
 
   const renderContent = () => {
-    const cardStyle = {
-      background: 'rgba(10, 18, 11, 0.7)',
-      border: '2px solid rgba(217, 174, 110, 0.3)',
-      borderRadius: '24px',
-      padding: '32px',
-      textAlign: 'center' as const,
-      boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-      backdropFilter: 'blur(10px)',
-      color: '#F6E8CD',
-      width: '100%',
-      maxWidth: '400px'
-    };
+    // Parchment card used by the simple waiting/result states
+    const cardStyle: React.CSSProperties = { padding: '30px 24px', textAlign: 'center', width: '100%', maxWidth: '400px' };
+    const kicker = (t: string) => <div className="lh-kicker" style={{ marginBottom: '6px' }}>{t}</div>;
+    const title = (t: React.ReactNode) => <h2 className="lh-display" style={{ fontSize: '26px', margin: '0 0 10px', lineHeight: 1.3 }}>{t}</h2>;
 
     switch (session.state) {
       case 'LOBBY':
         return (
-          <div style={cardStyle}>
-            <h2 style={{ fontSize: '28px', fontFamily: "'Cinzel', serif", marginBottom: '16px', color: '#D9AE6E' }}>รอผู้สอนเปิดเกม</h2>
-            <p style={{ fontSize: '18px', opacity: 0.8 }}>คุณอยู่ในบ้านที่ {houseId}</p>
-          </div>
+          <Card>
+            <img src={`/houses/${houseId}.png`} alt="" className="lh-house is-lit" style={{ width: '190px', margin: '-30px auto -40px' }} />
+            {kicker('Little Hood')}
+            {title('รอผู้สอนเปิดเกม')}
+            <p className="lh-breathe" style={{ fontSize: '16px', color: 'var(--lh-ink-soft)' }}>บ้านที่ {houseId} จุดตะเกียงรอแล้ว…</p>
+          </Card>
         );
-      
+
       case 'COUNTDOWN':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '50vh' }}>
-            <h2 style={{ fontSize: '32px', color: 'white', fontWeight: 'bold', marginBottom: '24px', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>เตรียมพร้อม!</h2>
-            <div style={{ fontSize: '80px', color: '#D9AE6E', fontWeight: 'bold', textShadow: '0 0 20px rgba(217,174,110,0.5)' }}>{countdown > 0 ? countdown : 'เริ่ม!'}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '55vh', gap: '12px' }}>
+            <h2 className="lh-display" style={{ fontSize: '30px', color: 'var(--lh-cream)', textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>เตรียมพร้อม!</h2>
+            <span key={countdown} className="lh-seal lh-pop" style={{ width: '150px', height: '150px', fontSize: countdown > 0 ? '72px' : '34px', fontFamily: countdown > 0 ? "'Cinzel', serif" : 'var(--lh-display)', fontWeight: countdown > 0 ? 700 : 400 }}>
+              {countdown > 0 ? countdown : 'เริ่ม!'}
+            </span>
           </div>
         );
 
-      case 'QUESTION_OPEN':
+      case 'QUESTION_OPEN': {
+        const urgent = timeRemaining <= 10;
         return (
-          <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div style={{...cardStyle, padding: '24px'}}>
-              <h2 style={{ fontSize: '24px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '8px' }}>ข้อที่ {session.currentQuestionIndex + 1}</h2>
-              <div style={{ fontSize: '32px', fontWeight: 'bold', color: timeRemaining <= 10 ? '#ff4757' : '#4ade80', textShadow: '0 0 10px rgba(0,0,0,0.5)', marginBottom: '8px' }}>{timeRemaining} วินาที</div>
-              <p style={{ fontSize: '16px', opacity: 0.8 }}>ดูโจทย์บนจอใหญ่ แล้วเลือกคำตอบ</p>
-              
-              {house.hasSubmitted && (
-                <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(74, 222, 128, 0.2)', border: '1px solid #4ade80', borderRadius: '12px', color: '#4ade80', fontWeight: 'bold' }}>
-                  ✅ ส่งคำตอบแล้ว รอเฉลย
-                </div>
-              )}
+          <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+            <div className="lh-parchment lh-flip" style={{ padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+              <div>
+                {kicker(`ภารกิจที่ ${session.currentQuestionIndex + 1} / 5`)}
+                <div style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>ดูโจทย์บนจอใหญ่ แล้วเลือกคำตอบ</div>
+              </div>
+              <span key={timeRemaining} className={urgent ? 'lh-pop' : ''} style={{ fontFamily: "'Cinzel', serif", fontSize: '34px', fontWeight: 700, color: urgent ? 'var(--lh-hood)' : 'var(--lh-ink)', minWidth: '56px', textAlign: 'right' }}>{timeRemaining}</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '18px' }}>
               {[
-                { key: 'ก', icon: <Triangle size={32} fill="currentColor" />, color: '#ff6b81', bg: 'rgba(255,107,129,0.15)' },
-                { key: 'ข', icon: <Diamond size={32} fill="currentColor" />, color: '#7bed9f', bg: 'rgba(123,237,159,0.15)' },
-                { key: 'ค', icon: <Circle size={32} fill="currentColor" />, color: '#70a1ff', bg: 'rgba(112,161,255,0.15)' },
-                { key: 'ง', icon: <Square size={32} fill="currentColor" />, color: '#eccc68', bg: 'rgba(236,204,104,0.15)' }
+                { key: 'ก', icon: <Triangle size={30} fill="currentColor" />, color: '#A8233A', dark: '#5A0E1A' },
+                { key: 'ข', icon: <Diamond size={30} fill="currentColor" />, color: '#2F6B3A', dark: '#163A1C' },
+                { key: 'ค', icon: <Circle size={30} fill="currentColor" />, color: '#2C4F8A', dark: '#14284A' },
+                { key: 'ง', icon: <Square size={30} fill="currentColor" />, color: '#B07A1E', dark: '#5A3C0A' }
               ].map(opt => {
                 const isSelected = house.hasSubmitted && (house.selectedKey || selectedKey) === opt.key;
                 const isDimmed = house.hasSubmitted && !isSelected;
-                
                 return (
-                  <button 
+                  <button
                     key={opt.key}
                     onClick={() => handleSubmit(opt.key)}
                     disabled={house.hasSubmitted}
+                    aria-label={`ตอบข้อ ${opt.key}`}
+                    className={isSelected ? 'lh-pop' : ''}
                     style={{
-                      padding: '32px 0',
-                      borderRadius: '20px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      gap: '12px',
-                      background: isSelected ? opt.color : opt.bg,
-                      color: isSelected ? '#1a1a1a' : opt.color,
-                      border: `2px solid ${opt.color}`,
-                      opacity: isDimmed ? 0.3 : 1,
-                      transform: isSelected ? 'scale(1.05)' : 'scale(1)',
-                      boxShadow: isSelected ? `0 0 20px ${opt.color}` : 'none',
-                      transition: 'all 0.3s ease',
-                      cursor: house.hasSubmitted ? 'default' : 'pointer'
+                      aspectRatio: '1 / 1', borderRadius: '50%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                      background: `radial-gradient(circle at 35% 30%, ${opt.color}, ${opt.dark} 78%)`,
+                      color: '#FBEBD2', border: `4px solid ${isSelected ? 'var(--lh-gold-bright)' : 'rgba(0,0,0,0.35)'}`,
+                      boxShadow: isSelected ? '0 0 0 6px rgba(243,213,138,0.35), 0 0 36px rgba(243,213,138,0.7)' : '0 8px 0 rgba(0,0,0,0.45), inset 0 0 0 6px rgba(255,255,255,0.08)',
+                      opacity: isDimmed ? 0.3 : 1, filter: isDimmed ? 'grayscale(0.6)' : 'none',
+                      cursor: house.hasSubmitted ? 'default' : 'pointer', transition: 'opacity 0.3s, transform 0.1s'
                     }}
                   >
                     {opt.icon}
-                    <span style={{ fontSize: '24px', fontWeight: 'bold' }}>{opt.key}</span>
+                    <span className="lh-display" style={{ fontSize: '30px', lineHeight: 1 }}>{opt.key}</span>
                   </button>
                 );
               })}
             </div>
+            {house.hasSubmitted && (
+              <div className="lh-plaque lh-rise" style={{ alignSelf: 'center', padding: '8px 18px' }}>
+                <span className="lh-display" style={{ fontSize: '16px' }}>ส่งคำตอบแล้ว — รอเฉลยบนจอใหญ่</span>
+              </div>
+            )}
           </div>
         );
+      }
 
       case 'QUESTION_CLOSED':
         return (
-          <div style={cardStyle}>
-            <h2 style={{ fontSize: '32px', fontFamily: "'Cinzel', serif", color: '#ff4757', marginBottom: '16px' }}>หมดเวลา</h2>
-            <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '24px' }}>กำลังรอเฉลยบนจอใหญ่...</p>
+          <Card>
+            {kicker(`ภารกิจที่ ${session.currentQuestionIndex + 1}`)}
+            {title('หมดเวลา!')}
+            <p style={{ fontSize: '16px', color: 'var(--lh-ink-soft)', marginBottom: '18px' }}>กำลังรอเฉลยบนจอใหญ่…</p>
             {house.hasSubmitted ? (
-               <div style={{ padding: '16px', background: 'rgba(74, 222, 128, 0.2)', borderRadius: '12px', border: '1px solid #4ade80', color: '#4ade80', fontSize: '20px', fontWeight: 'bold' }}>
-                 ส่งคำตอบแล้ว: {house.selectedKey || selectedKey}
-               </div>
+              <div className="lh-stamp lh-display" style={{ display: 'inline-block', padding: '6px 18px', border: '3px double #2F6B3A', borderRadius: '8px', color: '#2F6B3A', fontSize: '20px' }}>
+                ตอบ {house.selectedKey || selectedKey}
+              </div>
             ) : (
-               <div style={{ padding: '16px', background: 'rgba(255, 71, 87, 0.2)', borderRadius: '12px', border: '1px solid #ff4757', color: '#ff4757', fontSize: '20px', fontWeight: 'bold' }}>
-                 ไม่ได้ส่งคำตอบ
-               </div>
+              <div className="lh-stamp lh-display" style={{ display: 'inline-block', padding: '6px 18px', border: '3px double var(--lh-hood)', borderRadius: '8px', color: 'var(--lh-hood)', fontSize: '20px' }}>
+                ไม่ได้ส่งคำตอบ
+              </div>
             )}
-          </div>
+          </Card>
         );
 
       case 'REVEAL':
         return (
-          <div style={cardStyle}>
-            <h2 style={{ fontSize: '24px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '24px' }}>ผลการตอบข้อที่ {session.currentQuestionIndex + 1}</h2>
-            <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#fff', marginBottom: '24px', textShadow: '0 0 15px rgba(255,255,255,0.3)' }}>
-              คะแนนปัจจุบัน: {house.score}
+          <Card>
+            {kicker(`เฉลยภารกิจที่ ${session.currentQuestionIndex + 1}`)}
+            {title('ดูเฉลยบนจอใหญ่')}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', margin: '6px 0 14px' }}>
+              <span className="lh-coin" style={{ width: '30px', height: '30px' }} />
+              <span key={house.score} className="lh-pop" style={{ fontFamily: "'Cinzel', serif", fontSize: '40px', fontWeight: 700 }}>{house.score}</span>
             </div>
-            <p style={{ fontSize: '16px', opacity: 0.6 }}>รอผู้สอนเริ่มกิจกรรมถัดไป...</p>
-          </div>
+            <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>รอผู้สอนเริ่มกิจกรรมถัดไป…</p>
+          </Card>
         );
 
       case 'MID_SCOREBOARD':
         return (
-          <div style={cardStyle}>
-            <h2 style={{ fontSize: '28px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '16px' }}>จบช่วง Pre-test</h2>
-            <p style={{ fontSize: '18px', opacity: 0.8, marginBottom: '24px' }}>ดูสรุปคะแนนครึ่งแรกบนจอใหญ่เลยครับ!</p>
-            <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#fff', marginBottom: '24px', textShadow: '0 0 15px rgba(255,255,255,0.3)' }}>
-              คะแนนของคุณ: {house.score}
+          <Card>
+            {kicker('จบช่วง Pre-test')}
+            {title('ดูอันดับบนจอใหญ่!')}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', margin: '6px 0' }}>
+              <span className="lh-coin" style={{ width: '30px', height: '30px' }} />
+              <span className="lh-pop" style={{ fontFamily: "'Cinzel', serif", fontSize: '40px', fontWeight: 700 }}>{house.score}</span>
             </div>
-          </div>
+            <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>ต่อไป: Part 1 ห้องแล็บบอร์ดเกม</p>
+          </Card>
         );
 
       case 'PART_1':
@@ -240,7 +244,7 @@ const PlayerView: React.FC = () => {
       case 'PART_5': {
         const PartView = { PART_1: Part1, PART_2: Part2, PART_3: Part3, PART_4: Part4, PART_5: Part5 }[session.state];
         return (
-          <div style={{ display: 'flex', justifyContent: 'center', width: '100%', padding: '0 16px', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
             <PartView key={session.state} houseId={houseId} />
           </div>
         );
@@ -249,14 +253,15 @@ const PlayerView: React.FC = () => {
       case 'NIGHT_MODE':
         if (session.awakeHouseId !== houseId) {
           return (
-            <div style={{ ...cardStyle, background: 'rgba(17, 17, 17, 0.9)', border: '1px solid #333' }}>
-              <h2 style={{ fontSize: '28px', color: '#aaa', marginBottom: '16px' }}>คืนที่ {currentNight} — จงหลับตา...</h2>
-              <p style={{ opacity: 0.5, color: '#fff' }}>รอฟังเสียงจากผู้ควบคุมเกม</p>
+            <div style={{ width: '100%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', textAlign: 'center', paddingTop: '34vh' }}>
+              <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '13px', letterSpacing: '0.35em', color: '#9FB4E0' }}>NIGHT {['I', 'II', 'III', 'IV', 'V'][currentNight - 1]}</div>
+              <h2 className="lh-display lh-breathe" style={{ fontSize: '30px', color: '#E8EEFF', textShadow: '0 0 30px rgba(160,190,255,0.5)' }}>คืนที่ {currentNight} — จงหลับตา…</h2>
+              <p style={{ color: 'rgba(214,225,245,0.7)', fontSize: '15px' }}>ฟังเสียงผู้ควบคุมเกม เมื่อถึงตาบ้านของคุณ หน้าจอจะสว่างขึ้น</p>
               {currentNight > 1 && (
-                <div style={{ marginTop: '24px', textAlign: 'left', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', color: '#ddd' }}>
-                  <div style={{ fontWeight: 'bold', color: '#D9AE6E', marginBottom: '8px' }}>☀️ ข่าวจากคืนที่ {currentNight - 1}</div>
-                  {nightNews(session, currentNight - 1).map((line, i) => <div key={i} style={{ padding: '2px 0' }}>{line}</div>)}
-                  <div style={{ marginTop: '12px', fontSize: '15px', opacity: 0.8 }}>
+                <div className="lh-parchment lh-rise" style={{ marginTop: '12px', width: '100%', textAlign: 'left', padding: '16px 18px', opacity: 0.92, animationDelay: '1.2s' }}>
+                  <div className="lh-display" style={{ fontSize: '16px', color: 'var(--lh-hood)', marginBottom: '6px' }}>ข่าวจากคืนที่ {currentNight - 1}</div>
+                  {nightNews(session, currentNight - 1).map((line, i) => <div key={i} style={{ padding: '2px 0', fontSize: '15px' }}>{line}</div>)}
+                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed rgba(122,85,48,0.4)', fontSize: '15px', fontWeight: 'bold' }}>
                     บ้านของคุณ: {house.isDead ? '☠️ ล้มลงแล้ว' : (house.injuries ? '❤️‍🩹 บาดเจ็บ 1 ครั้ง' : '❤️ ปลอดภัยดี')}
                   </div>
                 </div>
@@ -496,94 +501,45 @@ const PlayerView: React.FC = () => {
 
       case 'FINISHED':
         return (
-          <div style={cardStyle}>
-            <h2 style={{ fontSize: '32px', fontFamily: "'Cinzel', serif", color: '#D9AE6E', marginBottom: '24px' }}>ภารกิจเสร็จสิ้น!</h2>
-            <div style={{ padding: '24px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px', marginBottom: '24px' }}>
-              <div style={{ fontSize: '20px', marginBottom: '12px' }}>คะแนนรวมทั้งหมด: <strong style={{color: '#fff', fontSize: '28px'}}>{house.score}</strong></div>
-              <div style={{ fontSize: '18px' }}>ตอบถูกรวม: <strong style={{color: '#4ade80'}}>{house.correctAnswers} / 5</strong> ข้อ</div>
+          <Card>
+            <img src={`/houses/${houseId}.png`} alt="" className="lh-house is-lit" style={{ width: '200px', margin: '-34px auto -44px' }} />
+            {kicker('ภารกิจเสร็จสิ้น')}
+            {title('ขอบคุณที่ร่วมออกเดินทาง')}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', margin: '10px 0 16px' }}>
+              <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>เหรียญรวม</div><div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}><span className="lh-coin" /><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.score}</strong></div></div>
+              <div><div style={{ fontSize: '13px', color: 'var(--lh-ink-soft)', fontWeight: 'bold' }}>Pre-test ตอบถูก</div><strong style={{ fontFamily: "'Cinzel', serif", fontSize: '30px' }}>{house.correctAnswers}/5</strong></div>
             </div>
-            <p style={{ fontSize: '16px', opacity: 0.8 }}>ขอบคุณที่ร่วมออกเดินทาง<br/>รอผู้สอนประกาศผลบนจอใหญ่</p>
-          </div>
+            <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>รอผู้สอนประกาศผลบนจอใหญ่</p>
+          </Card>
         );
-      
+
       default:
-        return <div style={{ color: 'white', fontSize: '20px' }}>กำลังโหลด...</div>;
+        return <div className="lh-display lh-breathe" style={{ color: 'var(--lh-gold-bright)', fontSize: '20px' }}>กำลังโหลด…</div>;
     }
   };
 
   const isNightMode = session.state === 'NIGHT_MODE';
+  const awake = isNightMode && session.awakeHouseId === houseId;
 
   return (
-    <div className="min-h-screen" style={isNightMode ? {
-      backgroundImage: 'url(/village-bg.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'bottom',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '16px',
-      position: 'relative'
-    } : {}} >
-      {/* Background layer for non-night mode */}
-      {!isNightMode && <div className="forest-bg" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: -1 }} />}
-      
+    <ForestScene image="/village-bg.jpg" night={isNightMode && !awake} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 0 24px' }}>
       {!isNightMode && (
-        <div className="w-full flex justify-between items-center mb-6 px-4" style={{ zIndex: 1 }}>
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
-            border: '2px solid rgba(217, 174, 110, 0.5)',
-            padding: '16px 28px',
-            borderRadius: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            minWidth: '180px',
-            boxShadow: '0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(217, 174, 110, 0.15)'
-          }}>
-            <span style={{ 
-              color: '#D9AE6E', 
-              fontFamily: "'Cinzel', serif", 
-              fontWeight: 'bold', 
-              fontSize: '28px',
-              textShadow: '0 0 12px rgba(217, 174, 110, 0.6)',
-              letterSpacing: '0.05em',
-              lineHeight: 1.2
-            }}>
-              บ้านที่ {houseId}
-            </span>
-            <span style={{ color: '#F6E8CD', opacity: 0.9, fontSize: '16px', marginTop: '4px', fontWeight: 'bold', letterSpacing: '0.05em' }}>ผู้เข้าแข่งขัน</span>
+        <div style={{ width: '100%', maxWidth: '640px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', padding: '0 16px', marginBottom: '22px' }}>
+          <div className="lh-plaque">
+            <img src={`/houses/${houseId}.png`} alt="" style={{ width: '40px', height: '40px', objectFit: 'contain', margin: '-8px 0' }} />
+            <span className="lh-display" style={{ fontSize: '18px' }}>บ้านที่ {houseId}</span>
           </div>
-
-          <div style={{ 
-            background: 'linear-gradient(135deg, rgba(217, 174, 110, 0.25) 0%, rgba(30, 48, 38, 0.6) 100%)',
-            border: '2px solid rgba(217, 174, 110, 0.5)',
-            padding: '16px 28px',
-            borderRadius: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            minWidth: '180px',
-            boxShadow: '0 8px 25px rgba(0,0,0,0.5), inset 0 0 15px rgba(217, 174, 110, 0.15)'
-          }}>
-            <span style={{ 
-              color: '#D9AE6E', 
-              fontFamily: "'Cinzel', serif", 
-              fontWeight: 'bold', 
-              fontSize: '16px',
-              textShadow: '0 0 12px rgba(217, 174, 110, 0.6)',
-              letterSpacing: '0.1em'
-            }}>SCORE</span>
-            <span style={{ color: '#fff', fontSize: '36px', fontWeight: 'bold', marginTop: '2px', textShadow: '0 4px 8px rgba(0,0,0,0.8)', lineHeight: 1 }}>
-              {house.score}
-            </span>
+          <div className="lh-plaque" style={{ padding: '6px 14px' }}>
+            <span className="lh-coin" />
+            <span key={house.score} className="lh-pop" style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '20px' }}>{house.score}</span>
           </div>
         </div>
       )}
-      
-      <div style={{ zIndex: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
+
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: isNightMode ? '0 16px' : '0 16px' }}>
         {renderContent()}
       </div>
-    </div>
+    </ForestScene>
   );
 };
 

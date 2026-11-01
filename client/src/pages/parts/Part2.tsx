@@ -42,7 +42,7 @@ const Part2: React.FC<{ houseId: number }> = ({ houseId }) => {
           <Note>ตอนนี้ถึงเวลาเข้าป่าจริง — ในป่าแห่งนี้มีตัวละครหลัก 3 ตัวที่ล็อกไว้แล้ว ใช้เป็นแนวทางก่อนออกแบบตัวละครเสริมของทีมคุณเอง</Note>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
             {REF_CHARACTERS.map((c) => (
-              <div key={c.label} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(217,174,110,0.25)', borderRadius: '16px', padding: '14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
+              <div key={c.label} style={{ background: 'rgba(122,85,48,0.1)', border: '1px solid rgba(122,85,48,0.25)', borderRadius: '16px', padding: '14px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', textAlign: 'center' }}>
                 <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Cinzel', serif", fontWeight: 'bold' }}>{c.mono}</div>
                 <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{c.label}</div>
               </div>
@@ -54,8 +54,8 @@ const Part2: React.FC<{ houseId: number }> = ({ houseId }) => {
       {step === 1 && (
         <Section title="ด่านที่ 1 — แนวคิด/เนื้อเรื่องคืออะไร">
           <Box>
-            <div><strong style={{ color: '#D9AE6E' }}>Concept</strong> คือแก่นของเกม — ไอเดียหลักที่ทุกอย่างในเกมต้องสอดคล้องกัน</div>
-            <div><strong style={{ color: '#D9AE6E' }}>Story</strong> คือสิ่งที่ห่อหุ้มกลไก (mechanic) ให้มีความหมาย ทำให้ผู้เล่นอยากเล่นต่อ ไม่ใช่แค่ทำตามกฎเฉย ๆ</div>
+            <div><strong style={{ color: '#8A5A1E' }}>Concept</strong> คือแก่นของเกม — ไอเดียหลักที่ทุกอย่างในเกมต้องสอดคล้องกัน</div>
+            <div><strong style={{ color: '#8A5A1E' }}>Story</strong> คือสิ่งที่ห่อหุ้มกลไก (mechanic) ให้มีความหมาย ทำให้ผู้เล่นอยากเล่นต่อ ไม่ใช่แค่ทำตามกฎเฉย ๆ</div>
           </Box>
           <Box>
             <div><strong>Catan</strong> — เนื้อเรื่องตั้งถิ่นฐานบนเกาะ ห่อหุ้มกลไกแลกเปลี่ยนทรัพยากร</div>
