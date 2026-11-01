@@ -62,7 +62,7 @@ const Part2: React.FC<{ houseId: number }> = ({ houseId }) => {
             <div><strong>Pandemic</strong> — เนื้อเรื่องควบคุมโรคระบาด ห่อหุ้มกลไกร่วมมือกันแก้ปัญหา</div>
             <div><strong>Ticket to Ride</strong> — เนื้อเรื่องเชื่อมเส้นทางรถไฟ ห่อหุ้มกลไกวางแผนเส้นทาง</div>
           </Box>
-          <Quiz quiz={PART_QUIZZES[2]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} />
+          <Quiz quiz={PART_QUIZZES[2]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} seed={`house-${houseId}`} />
         </Section>
       )}
 

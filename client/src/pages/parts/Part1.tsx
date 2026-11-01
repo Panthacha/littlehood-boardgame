@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
+import { seededShuffle } from '../../utils/shuffle';
 import { PartShell, Section, Note, Field, SummaryCard, DoneScreen, Loading, GOLD } from './kit';
 import { GAME_THEME } from './content';
 import { SparkleBurst } from '../../theme/Forest';
@@ -47,7 +48,7 @@ interface Props {
 }
 
 const Part1: React.FC<Props> = ({ houseId }) => {
-  const { socket } = useSocket();
+  const { socket, session } = useSocket();
   const [step, setStep] = useState(0);
   const [data, setData] = useState<Part1Data>(EMPTY_DATA);
   const [selectedPiece, setSelectedPiece] = useState<string | null>(null);
@@ -132,7 +133,8 @@ const Part1: React.FC<Props> = ({ houseId }) => {
         <Section title="สิ่งไหนคือบอร์ดเกม?">
           <Note>แตะ "ใช่" หรือ "ไม่ใช่" ให้ครบทุกชิ้น</Note>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px' }}>
-            {CLASSIFY_ITEMS.map((item) => {
+            {/* order shuffled per game + house so the yes/no answers don't follow a pattern */}
+            {seededShuffle(CLASSIFY_ITEMS, `${session?.id || ''}:house-${houseId}:classify`).map((item) => {
               const answered = data.classifyAnswers[item.id] !== undefined;
               const correct = answered ? data.classifyAnswers[item.id] === item.isGame : null;
               return (

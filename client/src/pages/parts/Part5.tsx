@@ -82,7 +82,7 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
             <div><strong style={{ color: GOLD }}>Playtest</strong> คือการทดลองเล่นเกมก่อนเผยแพร่จริง เพื่อดูว่าเล่นได้จริงไหม สนุกไหม</div>
             <div>ตัวชี้วัดง่าย ๆ: <strong>เข้าใจกติกาไหม? มีช่วงเบื่อไหม? อยากเล่นซ้ำไหม?</strong></div>
           </Box>
-          <Quiz quiz={PART_QUIZZES[5]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} />
+          <Quiz quiz={PART_QUIZZES[5]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} seed={`house-${houseId}`} />
         </Section>
       )}
 

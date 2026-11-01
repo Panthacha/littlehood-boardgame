@@ -18,6 +18,8 @@ import {
   resetSession,
   initializeNightMode,
   houseOwnedBy,
+  questionFor,
+  publicQuestionFor,
   startPosttest,
   releaseHouse,
   processNightSkill
@@ -54,8 +56,9 @@ io.on('connection', (socket) => {
   // joins a specific one via joinLobby/hostJoin).
   socket.emit('gameStateUpdate', getSession());
   if (getSession().state !== 'LOBBY') {
+     const s = getSession();
      socket.emit('questionUpdate', {
-        question: getSession().state === 'REVEAL' ? questions[getSession().currentQuestionIndex] : null,
+        question: s.state === 'REVEAL' ? questionFor(s, s.currentQuestionIndex) : publicQuestionFor(s, s.currentQuestionIndex),
         index: getSession().currentQuestionIndex,
         total: questions.length
      });
@@ -109,7 +112,13 @@ io.on('connection', (socket) => {
   // Host events — all scoped to DEFAULT_EVENT_SLUG until a host room picker exists.
   socket.on('hostJoin', (callback) => {
     socket.join(DEFAULT_EVENT_SLUG);
-    callback({ success: true, session: getSession() });
+    // Include the current question so a big screen opened/reloaded mid-round
+    // shows it right away (the on-connect questionUpdate can arrive before
+    // the page is listening).
+    const s = getSession();
+    const inQuestion = ['COUNTDOWN', 'QUESTION_OPEN', 'QUESTION_CLOSED', 'REVEAL'].includes(s.state);
+    const question = !inQuestion ? null : s.state === 'REVEAL' ? questionFor(s, s.currentQuestionIndex) : publicQuestionFor(s, s.currentQuestionIndex);
+    callback({ success: true, session: s, question });
   });
 
   socket.on('hostStartGame', () => {
@@ -178,10 +187,10 @@ io.on('connection', (socket) => {
 
     setGameState(DEFAULT_EVENT_SLUG, 'REVEAL');
     const results = calculateScores();
-    const q = questions[getSession().currentQuestionIndex];
+    const q = questionFor(getSession(), getSession().currentQuestionIndex)!;
 
     io.to(DEFAULT_EVENT_SLUG).emit('revealAnswer', {
-      correctKey: q.correctKey,
+      correctKey: q.correctKey!,
       explanation: q.explanation,
       houseResults: results
     });
@@ -274,7 +283,8 @@ io.on('connection', (socket) => {
 function startRound() {
   const index = getSession().currentQuestionIndex;
   io.to(DEFAULT_EVENT_SLUG).emit('questionUpdate', {
-    question: null, // Don't send question to clients until REVEAL, host will use local data
+    // this game's shuffled order, without the answer until REVEAL
+    question: publicQuestionFor(getSession(), index) as any,
     index,
     total: questions.length
   });

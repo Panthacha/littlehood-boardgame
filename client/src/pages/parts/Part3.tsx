@@ -68,7 +68,7 @@ const Part3: React.FC<{ houseId: number }> = ({ houseId }) => {
               </div>
             ))}
           </div>
-          <Quiz quiz={PART_QUIZZES[3]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} />
+          <Quiz quiz={PART_QUIZZES[3]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} seed={`house-${houseId}`} />
         </Section>
       )}
 

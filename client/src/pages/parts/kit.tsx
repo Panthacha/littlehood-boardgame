@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
 import { SparkleBurst, Trail } from '../../theme/Forest';
+import { seededShuffle } from '../../utils/shuffle';
 
 // Shared building blocks for the Part screens, drawn as a parchment page
 // (theme/forest.css). Each Part is a stepper whose answers are saved per house to
@@ -128,14 +129,18 @@ export interface QuizDef { question: string; options: { id: string; text: string
 export const isQuizCorrect = (quiz: QuizDef, picked?: string | null) =>
   !!picked && !!quiz.options.find((o) => o.id === picked)?.correct;
 
-export const Quiz: React.FC<{ quiz: QuizDef; picked: string | null; onPick: (id: string) => void }> = ({ quiz, picked, onPick }) => {
+// `seed` (e.g. the house id) shuffles the choices so the right answer isn't
+// always in the same slot; combined with the game id, each house gets its own order.
+export const Quiz: React.FC<{ quiz: QuizDef; picked: string | null; onPick: (id: string) => void; seed?: string }> = ({ quiz, picked, onPick, seed }) => {
+  const { session } = useSocket();
   // Only celebrate a pick made on this screen, not one restored from saved progress.
   const [fresh, setFresh] = useState(false);
   const right = isQuizCorrect(quiz, picked);
+  const options = seed ? seededShuffle(quiz.options, `${session?.id || ''}:${seed}:${quiz.question}`) : quiz.options;
   return (
     <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '10px' }}>
       <div style={{ fontSize: '15px', fontWeight: 'bold' }}>เช็กความเข้าใจ: {quiz.question}</div>
-      {quiz.options.map((o, i) => {
+      {options.map((o, i) => {
         const cls = picked ? (o.correct ? 'is-right' : picked === o.id ? 'is-wrong' : '') : '';
         return (
           <div key={o.id} style={{ position: 'relative' }}>

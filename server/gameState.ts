@@ -1,4 +1,4 @@
-import { Session, HouseData, Player, GameState, NightEvent, Role } from './types';
+import { Session, HouseData, Player, GameState, NightEvent, Role, Question } from './types';
 
 // Character printed on each card; the card's QR link is /join/<slug>?house=<card>.
 export const CARD_ROLES: Record<number, Role> = {
@@ -320,9 +320,64 @@ export const processNightSkill = (eventSlug: string, houseId: number, targetId?:
   return true;
 };
 
+// Pre-test/Posttest choices are shuffled per game and per phase, so the
+// answer isn't always in the same slot and the Posttest's order differs
+// from the Pre-test's (same questions, so the scores still compare). The
+// keys ก ข ค ง and their shapes/colors stay in place; only the texts move,
+// and correctKey follows its text. Deterministic from the session id, so
+// every call (host screen, scoring, reveal) sees the same order.
+const seededRandom = (seed: string) => {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  return () => {
+    h += 0x6D2B79F5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+// Which slot (0-3) holds the correct answer for each question of this run:
+// every slot is used across the 5 questions (one slot twice), in a random
+// order per game and phase — so the answer is neither always ข nor a streak.
+const answerSlots = (session: Session): number[] => {
+  const rand = seededRandom(`${session.id}:${session.testPhase || 'PRE'}:slots`);
+  const slots = [0, 1, 2, 3, Math.floor(rand() * 4)];
+  for (let i = slots.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [slots[i], slots[j]] = [slots[j], slots[i]];
+  }
+  return slots;
+};
+
+export const questionFor = (session: Session, index: number): Question | undefined => {
+  const q = questions[index];
+  if (!q) return undefined;
+  const rand = seededRandom(`${session.id}:${session.testPhase || 'PRE'}:${index}`);
+  const correctText = q.options.find(o => o.key === q.correctKey)!.text;
+  const wrong = q.options.map(o => o.text).filter(t => t !== correctText);
+  for (let i = wrong.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [wrong[i], wrong[j]] = [wrong[j], wrong[i]];
+  }
+  const slot = answerSlots(session)[index % 5] % q.options.length;
+  const texts = [...wrong.slice(0, slot), correctText, ...wrong.slice(slot)];
+  const options = q.options.map((o, i) => ({ ...o, text: texts[i] }));
+  return { ...q, options, correctKey: options[slot].key };
+};
+
+// The question as players/host may see it before the reveal: no answer.
+export const publicQuestionFor = (session: Session, index: number) => {
+  const q = questionFor(session, index);
+  if (!q) return null;
+  const { correctKey, explanation, ...rest } = q;
+  return rest;
+};
+
 export const calculateScores = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
   const currentSession = getSession(eventSlug);
-  const question = questions[currentSession.currentQuestionIndex];
+  const question = questionFor(currentSession, currentSession.currentQuestionIndex);
   if (!question) return {};
 
   const timeTaken = currentSession.startTime ? (Date.now() - currentSession.startTime) / 1000 : 0;

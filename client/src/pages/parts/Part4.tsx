@@ -39,7 +39,7 @@ const Part4: React.FC<{ houseId: number }> = ({ houseId }) => {
           <Box>
             <div>แบบร่างเกมที่ดีต้องทำให้ <strong style={{ color: GOLD }}>คนอื่นเข้าใจเกมได้ทันที โดยไม่ต้องถามเพิ่ม</strong> — ธีม เรื่องราว กลไก กฎ อุปกรณ์ และเงื่อนไขชนะ ต้องครบและชัดเจน</div>
           </Box>
-          <Quiz quiz={PART_QUIZZES[4]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} />
+          <Quiz quiz={PART_QUIZZES[4]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} seed={`house-${houseId}`} />
         </Section>
       )}
 

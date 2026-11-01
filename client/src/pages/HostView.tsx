@@ -80,7 +80,9 @@ const HostView: React.FC = () => {
   useEffect(() => {
     if (!socket || !connected) return;
     
-    socket.emit('hostJoin', () => {});
+    socket.emit('hostJoin', (res: any) => {
+      if (res?.question) setQuestion(res.question);
+    });
     
     socket.on('questionUpdate', (data) => {
       if (data.question) {
