@@ -17,6 +17,8 @@ import {
   nextQuestion,
   resetSession,
   initializeNightMode,
+  houseOwnedBy,
+  releaseHouse,
   processNightSkill
 } from './gameState';
 import { questions } from './data';
@@ -58,18 +60,35 @@ io.on('connection', (socket) => {
      });
   }
 
-  socket.on('joinLobby', ({ eventSlug, houseId }, callback) => {
+  socket.on('joinLobby', ({ eventSlug, houseId, deviceId }, callback) => {
     const slug = eventSlug || DEFAULT_EVENT_SLUG;
 
-    const house = joinHouse(slug, socket.id, houseId);
+    const house = joinHouse(slug, socket.id, houseId, deviceId);
     if (!house) {
       return callback({ error: 'Invalid house ID' });
+    }
+    if (house === 'TAKEN' || house === 'ALREADY_IN_OTHER_HOUSE') {
+      return callback({ error: house, mine: deviceId ? houseOwnedBy(slug, deviceId) : null });
     }
 
     socketEventSlug.set(socket.id, slug);
     socket.join(slug);
     io.to(slug).emit('gameStateUpdate', getSession(slug));
     callback({ success: true, session: getSession(slug) });
+  });
+
+  // Join page: receive live session updates (to grey out taken houses)
+  // without taking a house, and learn which house this device already owns.
+  socket.on('watchLobby', ({ eventSlug, deviceId }, callback) => {
+    const slug = eventSlug || DEFAULT_EVENT_SLUG;
+    socket.join(slug);
+    socket.emit('gameStateUpdate', getSession(slug));
+    callback({ mine: deviceId ? houseOwnedBy(slug, deviceId) : null });
+  });
+
+  socket.on('adminReleaseHouse', (houseId) => {
+    releaseHouse(DEFAULT_EVENT_SLUG, houseId);
+    io.to(DEFAULT_EVENT_SLUG).emit('gameStateUpdate', getSession());
   });
 
   socket.on('submitAnswer', ({ sessionId, houseId, key }, callback) => {

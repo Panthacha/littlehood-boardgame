@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { nightNews } from '../utils/nightRecap';
 import { ForestScene } from '../theme/Forest';
+import { getDeviceId } from '../utils/deviceId';
 import { Triangle, Square, Circle, Diamond, Eye, Shield, Skull, Target, Search } from 'lucide-react';
 import Part1 from './parts/Part1';
 import Part2 from './parts/Part2';
@@ -47,7 +48,7 @@ const PlayerView: React.FC = () => {
   useEffect(() => {
     if (!socket || !connected || !houseId) return;
 
-    socket.emit('joinLobby', { eventSlug: sessionId || '', houseId }, (res) => {
+    socket.emit('joinLobby', { eventSlug: sessionId || '', houseId, deviceId: getDeviceId() }, (res) => {
       if (res.error) {
         setError(res.error);
       }
@@ -94,7 +95,23 @@ const PlayerView: React.FC = () => {
   }, [showHint, hintCountdown]);
 
   if (error) {
-    return <div className="min-h-screen forest-bg p-6 text-center text-white">{error}</div>;
+    const taken = error === 'TAKEN' || error === 'ALREADY_IN_OTHER_HOUSE';
+    return (
+      <ForestScene image="/village-bg.jpg">
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <Card>
+            <img src={`/houses/${houseId}.png`} alt="" className="lh-house is-dark" style={{ width: '170px', margin: '-24px auto -34px' }} />
+            <h2 className="lh-display" style={{ fontSize: '24px', margin: '0 0 10px' }}>
+              {error === 'TAKEN' ? `บ้านที่ ${houseId} มีคนเข้าแล้ว` : taken ? 'เครื่องนี้อยู่บ้านอื่นแล้ว' : 'เข้าบ้านไม่ได้'}
+            </h2>
+            <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)', marginBottom: '18px' }}>
+              {taken ? 'แต่ละบ้านเข้าได้ 1 เครื่องเท่านั้น ถ้าเป็นบ้านของกลุ่มคุณจริง ให้ผู้สอนกด "ปล่อยบ้าน" ในหน้า Admin' : error}
+            </p>
+            <a href={`/join/${sessionId || 'LITTLEHOOD'}`} className="lh-sign" style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}>กลับไปเลือกบ้าน</a>
+          </Card>
+        </div>
+      </ForestScene>
+    );
   }
 
   if (!session) {

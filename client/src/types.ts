@@ -44,6 +44,7 @@ export interface HouseData {
   hasSubmitted: boolean;
   selectedKey?: string;
   isOnline: boolean;
+  claimed?: boolean; // a device has taken this house (one device per house)
   role?: Role;
   isProtected?: boolean;
   injuries?: number;
@@ -69,7 +70,9 @@ export interface Session {
 
 // Client to Server Events
 export interface ClientToServerEvents {
-  joinLobby: (data: { eventSlug: string; houseId: number }, callback: (res: any) => void) => void;
+  joinLobby: (data: { eventSlug: string; houseId: number; deviceId?: string }, callback: (res: any) => void) => void;
+  watchLobby: (data: { eventSlug: string; deviceId: string }, callback: (res: { mine: number | null }) => void) => void;
+  adminReleaseHouse: (houseId: number) => void;
   submitAnswer: (data: { sessionId: string; houseId: number; key: string }, callback: (res: any) => void) => void;
   // Host events
   hostJoin: (callback: (res: any) => void) => void;

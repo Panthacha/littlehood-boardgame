@@ -146,11 +146,50 @@ export const grandmaLastTarget = (session: Session, grandmaHouseId: number, nigh
   return session.nightLog?.find(e => e.night === night - 1 && e.actorHouseId === grandmaHouseId && e.effect === 'PROTECT')?.targetHouseId;
 };
 
-export const joinHouse = (eventSlug: string, socketId: string, houseId: number): HouseData | null => {
+// One device per house. The first device (a random id the browser keeps in
+// localStorage) to join a house claims it for the rest of the session; that
+// same device can rejoin after a refresh or the phone sleeping, other
+// devices are refused. Keyed by session id, so a reset frees every house.
+// The teacher can free a house from Admin (e.g. the group's phone died).
+const houseClaims = new Map<string, Map<number, string>>();
+const claimsFor = (session: Session) => {
+  let m = houseClaims.get(session.id);
+  if (!m) { m = new Map(); houseClaims.set(session.id, m); }
+  return m;
+};
+
+export const houseOwnedBy = (eventSlug: string, deviceId: string): number | null => {
+  for (const [houseId, owner] of claimsFor(getSession(eventSlug))) if (owner === deviceId) return houseId;
+  return null;
+};
+
+export const releaseHouse = (eventSlug: string, houseId: number) => {
+  const session = getSession(eventSlug);
+  claimsFor(session).delete(houseId);
+  const house = session.houses[houseId];
+  if (!house) return;
+  house.claimed = false;
+  house.players = [];
+  house.isOnline = false;
+};
+
+export const joinHouse = (eventSlug: string, socketId: string, houseId: number, deviceId?: string): HouseData | 'TAKEN' | 'ALREADY_IN_OTHER_HOUSE' | null => {
   if (houseId < 1 || houseId > 6) return null;
+  const claims = claimsFor(getSession(eventSlug));
+  const device = deviceId || `socket:${socketId}`; // old clients without an id
+  const owner = claims.get(houseId);
+  if (owner && owner !== device) return 'TAKEN';
   const currentSession = getSession(eventSlug);
+  const otherHouse = houseOwnedBy(eventSlug, device);
+  if (otherHouse !== null && otherHouse !== houseId) {
+    // Picked the wrong house: free to switch before the game starts, locked after.
+    if (currentSession.state !== 'LOBBY') return 'ALREADY_IN_OTHER_HOUSE';
+    releaseHouse(eventSlug, otherHouse);
+  }
+  claims.set(houseId, device);
   const house = currentSession.houses[houseId];
   if (!house) return null;
+  house.claimed = true;
 
   // Check if player already in this house
   const existingPlayer = house.players.find(p => p.socketId === socketId);
@@ -301,6 +340,11 @@ export const startCountdown = (eventSlug: string, onTick: (count: number) => voi
   setGameState(eventSlug, 'COUNTDOWN');
 
   const interval = setInterval(() => {
+    // The host reset the game mid-countdown: stop, don't start a question in the new session.
+    if (getSession(eventSlug) !== currentSession) {
+      clearInterval(interval);
+      return;
+    }
     currentSession.countdown -= 1;
     onTick(currentSession.countdown);
     if (currentSession.countdown <= 0) {
@@ -323,7 +367,7 @@ export const startQuestionTimer = (eventSlug: string, onTick: (time: number) => 
   }
 
   const interval = setInterval(() => {
-    if (currentSession.state !== 'QUESTION_OPEN') {
+    if (currentSession.state !== 'QUESTION_OPEN' || getSession(eventSlug) !== currentSession) {
       clearInterval(interval);
       return;
     }

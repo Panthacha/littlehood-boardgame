@@ -160,23 +160,36 @@ const AdminView: React.FC = () => {
           </div>
         </section>
 
-        {/* Card: Player Management (Placeholder) */}
-        <section className="admin-card disabled">
+        {/* Card: Player Management — each house is locked to one device */}
+        <section className="admin-card">
           <div className="admin-card-header">
             <Users color="#D9AE6E" size={24} />
-            <h2 className="admin-card-title">จัดการผู้เล่น</h2>
+            <h2 className="admin-card-title">จัดการบ้าน (1 บ้าน = 1 เครื่อง)</h2>
           </div>
-          
+
           <div className="admin-card-content">
-             <button className="admin-btn-disabled">
-               เตะผู้เล่นที่ไม่ได้ใช้งาน
-             </button>
-             <button className="admin-btn-disabled">
-               แก้ไขคะแนน
-             </button>
-             <div className="admin-coming-soon">
-               Coming Soon
-             </div>
+            <p className="admin-status-text" style={{ marginBottom: '8px' }}>
+              * ถ้ากลุ่มไหนต้องเปลี่ยนเครื่อง (แบตหมด/เข้าผิดบ้าน) กด "ปล่อยบ้าน" แล้วให้เครื่องใหม่สแกนเข้ามา คะแนนของบ้านยังอยู่ครบ
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', width: '100%' }}>
+              {[1, 2, 3, 4, 5, 6].map(id => {
+                const h = session?.houses[id];
+                return (
+                  <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', padding: '8px 10px', borderRadius: '10px', background: 'rgba(0,0,0,0.3)', color: '#F6E8CD' }}>
+                    <span>บ้าน {id} {h?.claimed ? '🔒' : '—'}</span>
+                    <button
+                      disabled={!h?.claimed}
+                      onClick={() => {
+                        if (window.confirm(`ปล่อยบ้านที่ ${id} ให้เครื่องอื่นเข้าได้?`)) socket?.emit('adminReleaseHouse', id);
+                      }}
+                      style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid #D9AE6E', background: 'transparent', color: '#D9AE6E', fontWeight: 'bold', cursor: h?.claimed ? 'pointer' : 'default' }}
+                    >
+                      ปล่อยบ้าน
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
 
