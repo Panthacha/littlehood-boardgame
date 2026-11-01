@@ -19,7 +19,8 @@ interface Part3Data {
 
 const EMPTY: Part3Data = { quizPicked: null, drawnMechanic: '', drawnRule: '', applyIdea: '', frequency: null, outcome: null, abilityName: '', abilityDesc: '', balance1: '', balance2: '' };
 const LAST = 6;
-const MONO_COLORS = ['#9D3543', '#2D5A27', '#3A3A3A', '#B88645', '#2D5A27'];
+// picture file for each entry of MECHANICS, in the same order
+const MECHANIC_ICONS = ['dice', 'draw', 'place', 'trade', 'hidden'];
 
 const Part3: React.FC<{ houseId: number }> = ({ houseId }) => {
   const { session } = useSocket();
@@ -60,12 +61,11 @@ const Part3: React.FC<{ houseId: number }> = ({ houseId }) => {
             <div><strong style={{ color: '#8A5A1E' }}>Mechanic</strong> คือวิธีที่ผู้เล่นโต้ตอบกับเกม</div>
             <div><strong style={{ color: '#8A5A1E' }}>Rule</strong> คือข้อกำหนดที่ควบคุมกลไกนั้นให้เล่นได้จริง</div>
           </Box>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px' }}>
+            {/* card pictures (name printed on each), cut from "images/ไอคอนการ์ดเกมแฟนตาซีห้าแบบ.png" */}
             {MECHANICS.map((m, i) => (
-              <div key={m} style={{ background: 'rgba(122,85,48,0.1)', borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', textAlign: 'center' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: MONO_COLORS[i], display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '13px' }}>{m.slice(0, 2)}</div>
-                <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{m}</div>
-              </div>
+              <img key={m} src={`/mechanics/${MECHANIC_ICONS[i]}.webp`} alt={m} className="lh-rise"
+                style={{ width: 'calc((100% - 20px) / 3)', maxWidth: '150px', aspectRatio: '280 / 428', objectFit: 'contain', filter: 'drop-shadow(0 6px 8px rgba(60,30,10,0.4))', animationDelay: `${i * 0.08}s` }} />
             ))}
           </div>
           <Quiz quiz={PART_QUIZZES[3]} picked={data.quizPicked} onPick={(id) => update({ quizPicked: id })} seed={`house-${houseId}`} />
