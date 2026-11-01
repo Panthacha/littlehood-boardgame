@@ -1,17 +1,16 @@
 import React from 'react';
 import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Chips, SummaryCard, DoneScreen, Loading, labelOf, toggleIn, GOLD } from './kit';
-import { PART_QUIZZES, EQUIPMENT, CHECKLIST, STANCES, FREQUENCIES, OUTCOMES } from './content';
+import { PART_QUIZZES, EQUIPMENT, STANCES, FREQUENCIES, OUTCOMES } from './content';
 
 interface Part4Data {
   quizPicked: string | null;
   players: string;
   equipment: string[];
   winCondition: string;
-  checked: Record<string, boolean>;
 }
 
-const EMPTY: Part4Data = { quizPicked: null, players: '', equipment: [], winCondition: '', checked: {} };
-const LAST = 5;
+const EMPTY: Part4Data = { quizPicked: null, players: '', equipment: [], winCondition: '' };
+const LAST = 4;
 
 const Part4: React.FC<{ houseId: number }> = ({ houseId }) => {
   const { loaded, step, data, update, goStep, allParts } = usePartProgress<Part4Data>(houseId, 4, EMPTY, LAST);
@@ -20,7 +19,6 @@ const Part4: React.FC<{ houseId: number }> = ({ houseId }) => {
   const p1 = allParts[1]?.data || {};
   const p2 = allParts[2]?.data || {};
   const p3 = allParts[3]?.data || {};
-  const checkedCount = CHECKLIST.filter((c) => data.checked[c.id]).length;
 
   let canAdvance = true;
   if (step === 1) canAdvance = !!data.quizPicked;
@@ -32,7 +30,7 @@ const Part4: React.FC<{ houseId: number }> = ({ houseId }) => {
 
       {step === 0 && (
         <Section title="มารวมร่างกันเถอะ">
-          <Note>พาร์ทนี้จะ "รวมร่าง" ทุกอย่างที่ทีมทำมาตั้งแต่ Part 1-3 ให้เป็นแบบร่างเกมฉบับสมบูรณ์ แล้วฝึกขั้นตอนทำต้นแบบ (prototype) จริงต่อ</Note>
+          <Note>พาร์ทนี้จะ "รวมร่าง" ทุกอย่างที่ทีมทำมาตั้งแต่ Part 1-3 ให้เป็นแบบร่างเกมฉบับสมบูรณ์ แล้วเติมส่วนที่ยังขาดให้ครบ</Note>
         </Section>
       )}
 
@@ -74,32 +72,13 @@ const Part4: React.FC<{ houseId: number }> = ({ houseId }) => {
         </Section>
       )}
 
-      {step === 4 && (
-        <Section title="ด่านที่ 4 — ขั้นตอนสร้างต้นแบบ">
-          <Note>ทำกิจกรรมจริงในห้อง แล้วติ๊กเมื่อทำเสร็จแต่ละขั้น</Note>
-          {CHECKLIST.map((c) => {
-            const done = !!data.checked[c.id];
-            return (
-              <button key={c.id} onClick={() => update((d) => ({ checked: { ...d.checked, [c.id]: !d.checked[c.id] } }))} style={{
-                display: 'flex', alignItems: 'center', gap: '14px', minHeight: '56px', padding: '0 18px', borderRadius: '14px', color: '#2B1D12', textAlign: 'left', cursor: 'pointer',
-                border: done ? '1px solid rgba(47,107,58,0.5)' : '1px solid rgba(122,85,48,0.25)', background: done ? 'rgba(47,107,58,0.08)' : 'rgba(122,85,48,0.1)'
-              }}>
-                <span style={{ width: '24px', height: '24px', borderRadius: '7px', border: `2px solid ${done ? '#2F6B3A' : 'rgba(122,85,48,0.5)'}`, background: done ? '#2F6B3A' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#2B1D12', flexShrink: 0 }}>{done ? '✓' : ''}</span>
-                <span style={{ fontSize: '15px', fontWeight: 'bold' }}>{c.label}</span>
-              </button>
-            );
-          })}
-        </Section>
-      )}
-
       {step === LAST && (
         <DoneScreen title="Blueprint ฉบับเต็มของทีมพร้อมแล้ว!" subtitle="รอผู้สอนพาเข้าสู่คืนที่ 4 บนจอใหญ่ — Blueprint นี้จะถูกใช้ต่อใน Part 5 (Team Dossier)">
           <SummaryCard rows={[
             ['ชื่อเกม', p1.gameName],
             ['จำนวนผู้เล่น', data.players],
             ['อุปกรณ์', data.equipment.join(', ')],
-            ['เงื่อนไขชนะ', data.winCondition],
-            ['ขั้นตอนต้นแบบที่ทำเสร็จ', `${checkedCount} / ${CHECKLIST.length}`]
+            ['เงื่อนไขชนะ', data.winCondition]
           ]} />
         </DoneScreen>
       )}

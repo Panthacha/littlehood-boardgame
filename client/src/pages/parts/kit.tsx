@@ -29,9 +29,14 @@ export function usePartProgress<T extends Record<string, any>>(houseId: number, 
       setAllParts(parts);
       const saved = parts[partNumber];
       if (saved) {
-        stepRef.current = saved.step ?? 0;
+        // clamp: a Part may have lost steps since this progress was saved
+        stepRef.current = Math.min(saved.step ?? 0, lastStep);
         setStep(stepRef.current);
         setData({ ...empty, ...(saved.data || {}) });
+        // landed on the end page without having been marked done (step removed) — mark it now
+        if (stepRef.current >= lastStep && !saved.completedAt) {
+          socket.emit('savePartProgress', { houseId, partNumber, step: lastStep, data: saved.data || {}, completed: true }, () => {});
+        }
       }
       setLoaded(true);
     });

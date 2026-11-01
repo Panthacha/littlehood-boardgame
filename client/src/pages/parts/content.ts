@@ -56,10 +56,4 @@ export const OUTCOMES = [
   { id: 'reveal', label: 'เปิดเผยข้อมูล' }
 ];
 export const EQUIPMENT = ['บอร์ด', 'การ์ด', 'โทเค็น', 'ลูกเต๋า', 'อื่น ๆ'];
-export const CHECKLIST = [
-  { id: 'board', label: 'ร่างบอร์ด' },
-  { id: 'cards', label: 'ทำการ์ด' },
-  { id: 'tokens', label: 'ทำโทเค็น' },
-  { id: 'playtest', label: 'ทดลองเล่นเอง' }
-];
 export const PROBLEMS = ['กติกาสับสน', 'เล่นนานไป', 'ไม่มีใครอยากเล่นซ้ำ', 'ไม่มีปัญหา'];
