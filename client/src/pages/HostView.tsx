@@ -354,7 +354,7 @@ const HostView: React.FC = () => {
                           {bar('ภารกิจ Part 1–5', r.missionPct, '#2F6B3A', `${r.missionsDone}/5`)}
                           {bar('การอยู่รอด', r.survivalPct, r.status === 'down' ? '#A8233A' : '#B07A1E')}
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', color: 'var(--lh-ink-soft)', borderTop: '1px dashed rgba(122,85,48,0.35)', paddingTop: '8px' }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span className="lh-coin" style={{ width: '16px', height: '16px' }} /><strong style={{ color: 'var(--lh-ink)', fontSize: '15px' }}>{r.house.score}</strong> เหรียญ</span>
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span className="lh-coin" style={{ width: '20px', height: '20px' }} /><strong style={{ color: 'var(--lh-ink)', fontSize: '15px' }}>{r.house.score}</strong> เหรียญ</span>
                             <span>ถูกโจมตี {r.attacked} · ถูกกันไว้ {r.saved} · ถูกขโมย {r.stolenFrom}</span>
                           </div>
                         </div>

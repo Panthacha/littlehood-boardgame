@@ -268,7 +268,7 @@ const PlayerView: React.FC = () => {
             {kicker(`เฉลยภารกิจที่ ${session.currentQuestionIndex + 1}`)}
             {title('ดูเฉลยบนจอใหญ่')}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', margin: '6px 0 14px' }}>
-              <span className="lh-coin" style={{ width: '30px', height: '30px' }} />
+              <span className="lh-coin" style={{ width: '38px', height: '38px' }} />
               <span key={house.score} className="lh-pop" style={{ fontFamily: "'Cinzel', serif", fontSize: '40px', fontWeight: 700 }}>{house.score}</span>
             </div>
             <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>รอผู้สอนเริ่มกิจกรรมถัดไป…</p>
@@ -281,7 +281,7 @@ const PlayerView: React.FC = () => {
             {kicker('จบช่วง Pre-test')}
             {title('ดูอันดับบนจอใหญ่!')}
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', margin: '6px 0' }}>
-              <span className="lh-coin" style={{ width: '30px', height: '30px' }} />
+              <span className="lh-coin" style={{ width: '38px', height: '38px' }} />
               <span className="lh-pop" style={{ fontFamily: "'Cinzel', serif", fontSize: '40px', fontWeight: 700 }}>{house.score}</span>
             </div>
             <p style={{ fontSize: '15px', color: 'var(--lh-ink-soft)' }}>ต่อไป: Part 1 ห้องแล็บบอร์ดเกม</p>
@@ -594,7 +594,7 @@ const PlayerView: React.FC = () => {
                   </div>
                 ))}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--lh-ink-soft)', borderTop: '1px dashed rgba(122,85,48,0.35)', paddingTop: '8px' }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span className="lh-coin" style={{ width: '16px', height: '16px' }} /><strong style={{ color: 'var(--lh-ink)' }}>{house.score}</strong> เหรียญ</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}><span className="lh-coin" style={{ width: '20px', height: '20px' }} /><strong style={{ color: 'var(--lh-ink)' }}>{house.score}</strong> เหรียญ</span>
                   <span>ถูกโจมตี {me.attacked} · กันไว้ {me.saved}</span>
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--lh-ink-soft)' }}>คะแนนการเดินทาง = ความรู้ 40% + ภารกิจ 40% + การอยู่รอด 20%</div>
