@@ -126,41 +126,27 @@ export const initializeNightMode = (eventSlug: string = DEFAULT_EVENT_SLUG) => {
     };
   }
 
-  // Woodcutter's suspects carry over and narrow night after night, so the
-  // investigation builds across the 4 nights instead of restarting: night 1
-  // gets 3 suspects (always incl. the wolf), each later night drops one
-  // innocent from the previous list until only 2 remain.
-  let woodcutterResult: number[];
-  if (previousSuspects && previousSuspects.includes(wolfHouseId)) {
-    const innocents = previousSuspects.filter(id => id !== wolfHouseId);
-    if (previousSuspects.length > 2) {
-      innocents.splice(Math.floor(Math.random() * innocents.length), 1);
-    }
-    woodcutterResult = [wolfHouseId, ...innocents];
-  } else {
-    const otherHouses = [1,2,3,4,5,6].filter(id => id !== wolfHouseId);
-    for (let i = otherHouses.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [otherHouses[i], otherHouses[j]] = [otherHouses[j], otherHouses[i]];
-    }
-    woodcutterResult = [wolfHouseId, otherHouses[0], otherHouses[1]];
-  }
-  // sort to hide which one is wolf
-  woodcutterResult.sort((a, b) => a - b);
-
+  // Woodcutter (role_summary.md): usable on the first night only. Night 1
+  // draws 3 suspects, one of them always the wolf; on later nights the
+  // woodcutter keeps that same clue but has no action left.
   for (let i = 1; i <= 6; i++) {
-    if (currentSession.houses[i].role === 'WOODCUTTER') {
-      currentSession.houses[i].woodcutterResult = woodcutterResult;
+    const h = currentSession.houses[i];
+    if (h.role !== 'WOODCUTTER') continue;
+    if (previousSuspects) {
+      h.woodcutterResult = previousSuspects;
+      h.usedNightSkill = true;
+      continue;
     }
+    const otherHouses = [1,2,3,4,5,6].filter(id => id !== wolfHouseId);
+    for (let k = otherHouses.length - 1; k > 0; k--) {
+      const j = Math.floor(Math.random() * (k + 1));
+      [otherHouses[k], otherHouses[j]] = [otherHouses[j], otherHouses[k]];
+    }
+    // sorted so the order doesn't reveal which one is the wolf
+    h.woodcutterResult = [wolfHouseId, otherHouses[0], otherHouses[1]].sort((a, b) => a - b);
   }
 };
 
-// The house Grandma guarded on the night before `night`, if any — she can't
-// guard the same house two nights in a row (classic Werewolf rule), which is
-// what makes each night's choice depend on the last one.
-export const grandmaLastTarget = (session: Session, grandmaHouseId: number, night: number): number | undefined => {
-  return session.nightLog?.find(e => e.night === night - 1 && e.actorHouseId === grandmaHouseId && e.effect === 'PROTECT')?.targetHouseId;
-};
 
 // One device per house. The first device (a random id the browser keeps in
 // localStorage) to join a house claims it for the rest of the session; that
@@ -274,11 +260,15 @@ export const processNightSkill = (eventSlug: string, houseId: number, targetId?:
 
   const house = currentSession.houses[houseId];
   if (!house || house.usedNightSkill || house.isDead) return false;
+  // only the house the teacher has woken may act
+  if (currentSession.awakeHouseId !== houseId) return false;
 
   const role = house.role;
   if (!role) return false;
   const night = currentSession.lastCompletedPart || 1;
   const target = targetId ? currentSession.houses[targetId] : undefined;
+  // targets: another house that is still standing
+  if (target && (target.houseId === houseId || target.isDead)) return false;
   const events: NightEvent[] = [];
   const log = (effect: NightEvent['effect'], targetHouseId?: number) =>
     events.push({ night, actorHouseId: houseId, actorRole: role, targetHouseId, effect });
@@ -292,24 +282,36 @@ export const processNightSkill = (eventSlug: string, houseId: number, targetId?:
     else log('INJURE', t.houseId);
   };
 
+  // Grandma / Witch-help: a shield lasts the WHOLE night (role_summary.md),
+  // so it also cancels attacks that already landed on this house earlier
+  // tonight — the order the teacher wakes houses in doesn't matter.
+  const protect = (t: HouseData) => {
+    t.isProtected = true;
+    log('PROTECT', t.houseId);
+    for (const e of currentSession.nightLog || []) {
+      if (e.night !== night || e.targetHouseId !== t.houseId) continue;
+      if (e.effect !== 'INJURE' && e.effect !== 'KILL') continue;
+      t.injuries = Math.max(0, (t.injuries || 0) - 1);
+      t.isDead = false;
+      e.effect = 'BLOCKED';
+    }
+  };
+
   if (role === 'WOLF' && target) {
     target.score -= 100;
     house.score += 100;
     log('STEAL', target.houseId);
   } else if (role === 'GRANDMA' && target) {
-    if (grandmaLastTarget(currentSession, houseId, night) === target.houseId) return false;
-    target.isProtected = true;
-    log('PROTECT', target.houseId);
+    protect(target);
   } else if (role === 'HUNTER' && target) {
     attack(target);
   } else if (role === 'WITCH' && target && action === 'protect') {
-    target.isProtected = true;
-    log('PROTECT', target.houseId);
+    protect(target);
   } else if (role === 'WITCH' && target && action === 'attack') {
     attack(target);
   } else if (role === 'RED_RIDING_HOOD' && target) {
     log('PEEK', target.houseId);
-  } else if (role === 'WOODCUTTER') {
+  } else if (role === 'WOODCUTTER' && night === 1) {
     log('INVESTIGATE');
   } else {
     return false;
