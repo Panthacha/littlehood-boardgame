@@ -4,6 +4,7 @@ import HostView from './pages/HostView';
 import JoinView from './pages/JoinView';
 import PlayerView from './pages/PlayerView';
 import AdminView from './pages/AdminView';
+import SoundTest from './pages/SoundTest';
 import { SocketProvider } from './context/SocketContext';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="/join/:eventSlug" element={<JoinView />} />
           <Route path="/play/:sessionId" element={<PlayerView />} />
           <Route path="/admin" element={<AdminView />} />
+          <Route path="/sounds" element={<SoundTest />} />
         </Routes>
       </SocketProvider>
     </BrowserRouter>
