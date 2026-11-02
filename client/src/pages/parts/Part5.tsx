@@ -88,10 +88,10 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
       )}
 
       {step === 2 && (
-        <Section title="ด่านที่ 2 — กรอกผล Playtest">
-          <Note>ลองเล่นเกมตัวเองสั้น ๆ (หรือให้เพื่อนทีมอื่นลองเล่น) แล้วกรอกผลด้านล่าง</Note>
+        <Section title="ด่านที่ 2 — ประเมินเกมของทีม">
+          <Note>ยังไม่ต้องเล่นจริง — ให้ทีมผู้สร้างลองนึกภาพตอนมีคนมาเล่นเกมของทีม แล้วประเมินว่าน่าจะสนุกแค่ไหน และจุดไหนอาจเป็นปัญหา</Note>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <Label>ให้คะแนนความสนุก</Label>
+            <Label>คิดว่าเกมของทีมสนุกแค่ไหน</Label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[1, 2, 3, 4, 5].map((n) => (
                 <button key={n} aria-label={`${n} ดาว`} onClick={() => { play('select'); update({ stars: n }); }} style={{
@@ -101,8 +101,8 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
               ))}
             </div>
           </div>
-          <Chips label="ปัญหาที่เจอ (เลือกได้หลายอัน)" options={PROBLEMS} value={data.problems} onToggle={(o) => update((d) => ({ problems: toggleIn(d.problems, o) }))} />
-          <Field label="สิ่งที่จะปรับถ้ามีเวลาเพิ่ม" value={data.improveText} onChange={(v) => update({ improveText: v })} placeholder="เช่น ลดเวลาต่อตาให้สั้นลง" />
+          <Chips label="ปัญหาที่อาจเกิดขึ้น (เลือกได้หลายอัน)" options={PROBLEMS} value={data.problems} onToggle={(o) => update((d) => ({ problems: toggleIn(d.problems, o) }))} />
+          <Field label="อยากปรับอะไรให้เกมดีขึ้น" value={data.improveText} onChange={(v) => update({ improveText: v })} placeholder="เช่น ลดเวลาต่อตาให้สั้นลง" />
         </Section>
       )}
 
@@ -119,9 +119,9 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
             ['เงื่อนไขชนะ', p4.winCondition]
           ]} />
           <Box highlight>
-            <div style={{ fontSize: '11px', color: GOLD, fontWeight: 'bold' }}>ผล PLAYTEST</div>
-            <div>ความสนุก: {'★'.repeat(data.stars)} ({data.stars} / 5)</div>
-            <div>ปัญหาที่เจอ: {data.problems.join(', ') || '—'}</div>
+            <div style={{ fontSize: '11px', color: GOLD, fontWeight: 'bold' }}>ผลประเมินเกมของทีม</div>
+            <div>ความสนุกที่คาดไว้: {'★'.repeat(data.stars)} ({data.stars} / 5)</div>
+            <div>ปัญหาที่อาจเกิดขึ้น: {data.problems.join(', ') || '—'}</div>
             <div>สิ่งที่จะปรับ: {data.improveText || '—'}</div>
           </Box>
         </Section>
