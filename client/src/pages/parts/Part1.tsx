@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
 import { seededShuffle } from '../../utils/shuffle';
+import { play } from '../../sound/sfx';
 import { PartShell, Section, Note, Field, SummaryCard, DoneScreen, Loading, GOLD } from './kit';
 import { GAME_THEME } from './content';
 import { SparkleBurst } from '../../theme/Forest';
@@ -102,11 +103,13 @@ const Part1: React.FC<Props> = ({ houseId }) => {
   if (step === 2) canAdvance = !!formDone;
 
   const handleClassify = (id: string, answer: boolean) => {
+    play(CLASSIFY_ITEMS.find((it) => it.id === id)?.isGame === answer ? 'correct' : 'wrong');
     updateData({ classifyAnswers: { ...data.classifyAnswers, [id]: answer } });
   };
 
   const handleSelectPiece = (pieceId: string) => {
     if (data.matches[pieceId]) return;
+    play('select');
     setSelectedPiece(pieceId);
     setWrongLabel(null);
   };
@@ -116,10 +119,12 @@ const Part1: React.FC<Props> = ({ houseId }) => {
     if (data.matches[selectedPiece]) return;
     if (Object.values(data.matches).includes(labelId)) return;
     if (selectedPiece === labelId) {
+      play('correct');
       updateData({ matches: { ...data.matches, [selectedPiece]: labelId } });
       setSelectedPiece(null);
       setWrongLabel(null);
     } else {
+      play('wrong');
       setWrongLabel(labelId);
       setTimeout(() => setWrongLabel(null), 600);
     }

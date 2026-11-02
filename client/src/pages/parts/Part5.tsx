@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../../context/SocketContext';
+import { play } from '../../sound/sfx';
 import { usePartProgress, PartShell, Section, Note, Box, Quiz, Field, Chips, Label, SummaryCard, Loading, labelOf, toggleIn, isQuizCorrect, fmt, GOLD } from './kit';
 import { PART_QUIZZES, PROBLEMS, STANCES, FREQUENCIES, OUTCOMES, GAME_THEME } from './content';
 
@@ -29,7 +30,7 @@ const PresentTimer: React.FC = () => {
       <div style={{ width: '100%', maxWidth: '360px', height: '10px', borderRadius: '999px', background: 'rgba(122,85,48,0.15)', overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${Math.min(100, Math.round((seconds / 90) * 100))}%`, background: 'linear-gradient(90deg, #8A5A1E, #9D3543)', transition: 'width 1s linear' }} />
       </div>
-      {!running && seconds === 0 && <button className="lh-sign" onClick={() => setRunning(true)}>เริ่มพูด</button>}
+      {!running && seconds === 0 && <button className="lh-sign" onClick={() => { play('start'); setRunning(true); }}>เริ่มพูด</button>}
       {running && <button className="lh-sign lh-sign--quiet" onClick={() => setRunning(false)}>พูดจบแล้ว</button>}
       {!running && seconds > 0 && <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color }}>ใช้เวลา {seconds} วินาที {seconds >= 60 && seconds <= 90 ? '— พอดีเป๊ะ! 👏' : ''}</p>}
       <p style={{ margin: 0, fontSize: '13px', color: 'rgba(43,29,18,0.6)' }}>เป้าหมาย 60-90 วินาที (เขียว = อยู่ในช่วง)</p>
@@ -93,7 +94,7 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
             <Label>ให้คะแนนความสนุก</Label>
             <div style={{ display: 'flex', gap: '8px' }}>
               {[1, 2, 3, 4, 5].map((n) => (
-                <button key={n} aria-label={`${n} ดาว`} onClick={() => update({ stars: n })} style={{
+                <button key={n} aria-label={`${n} ดาว`} onClick={() => { play('select'); update({ stars: n }); }} style={{
                   width: '48px', height: '48px', borderRadius: '12px', border: '1px solid rgba(122,85,48,0.3)', fontSize: '22px', cursor: 'pointer',
                   background: n <= data.stars ? 'rgba(122,85,48,0.25)' : 'rgba(122,85,48,0.1)', color: n <= data.stars ? GOLD : 'rgba(43,29,18,0.3)'
                 }}>★</button>
@@ -150,7 +151,7 @@ const Part5: React.FC<{ houseId: number }> = ({ houseId }) => {
             ))}
           </div>
           {!data.signaled ? (
-            <button className="lh-sign lh-sign--hood lh-glow-pulse" onClick={() => update({ signaled: true })}>ส่งสัญญาณจบกิจกรรมให้ครู</button>
+            <button className="lh-sign lh-sign--hood lh-glow-pulse" onClick={() => { play('fanfare'); update({ signaled: true }); }}>ส่งสัญญาณจบกิจกรรมให้ครู</button>
           ) : (
             <p style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: '#2F6B3A' }}>✓ ส่งสัญญาณแล้ว รอผู้สอนเริ่ม Posttest บนจอใหญ่</p>
           )}

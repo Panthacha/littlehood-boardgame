@@ -72,11 +72,26 @@ export function usePartProgress<T extends Record<string, any>>(houseId: number, 
   return { loaded, step, data, update, goStep, allParts };
 }
 
+// Page-turn when moving between steps; stamp + chime when reaching the end page.
+// Silent on first render, so reopening a saved Part doesn't replay it.
+const StepSounds: React.FC<{ step: number; last: number }> = ({ step, last }) => {
+  const prev = useRef<number | null>(null);
+  useEffect(() => {
+    if (prev.current !== null && prev.current !== step) {
+      if (step === last) { play('stamp'); setTimeout(() => play('complete'), 250); }
+      else play('page');
+    }
+    prev.current = step;
+  }, [step, last]);
+  return null;
+};
+
 export const PartShell: React.FC<{
   part: number; title: string; step: number; totalSteps: number;
   canAdvance: boolean; nextLabel: string; onBack: () => void; onNext: () => void; children: React.ReactNode;
 }> = ({ part, title, step, totalSteps, canAdvance, nextLabel, onBack, onNext, children }) => (
   <div style={{ width: '100%', maxWidth: '640px', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '120px', textAlign: 'left' }}>
+    <StepSounds step={step} last={totalSteps - 1} />
     {/* key={step}: each step turns in like a new page */}
     <div key={step} className="lh-parchment lh-flip" style={{ padding: '24px 20px 26px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
@@ -223,7 +238,7 @@ export const CountdownTimer: React.FC<{ seconds: number; doneText: string }> = (
   useEffect(() => {
     if (status !== 'running') return;
     const t = setInterval(() => setLeft((s) => {
-      if (s <= 1) { setStatus('done'); return 0; }
+      if (s <= 1) { setStatus('done'); play('gong'); return 0; }
       return s - 1;
     }), 1000);
     return () => clearInterval(t);
@@ -237,7 +252,7 @@ export const CountdownTimer: React.FC<{ seconds: number; doneText: string }> = (
           <span style={{ fontFamily: "'Cinzel', serif", fontSize: '34px', fontWeight: 700, color: status === 'done' ? 'var(--lh-hood)' : 'var(--lh-ink)' }}>{fmt(left)}</span>
         </div>
       </div>
-      {status === 'idle' && <button className="lh-sign" onClick={() => setStatus('running')}>เริ่มจับเวลา ({Math.round(seconds / 60)} นาที)</button>}
+      {status === 'idle' && <button className="lh-sign" onClick={() => { play('start'); setStatus('running'); }}>เริ่มจับเวลา ({Math.round(seconds / 60)} นาที)</button>}
       {status === 'running' && <p className="lh-breathe" style={{ margin: 0, fontSize: '14px', color: 'var(--lh-ink-soft)' }}>เม็ดทรายกำลังไหล…</p>}
       {status === 'done' && <p className="lh-pop" style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: 'var(--lh-hood)', textAlign: 'center' }}>{doneText}</p>}
     </div>

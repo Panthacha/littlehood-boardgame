@@ -3,6 +3,8 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import { ForestScene } from '../theme/Forest';
 import { getDeviceId } from '../utils/deviceId';
+import { play } from '../sound/sfx';
+import { SoundToggle } from '../sound/SoundToggle';
 
 const JoinView: React.FC = () => {
   const { eventSlug } = useParams<{ eventSlug: string }>();
@@ -59,6 +61,7 @@ const JoinView: React.FC = () => {
             : 'บ้านนี้มีคนเข้าไปแล้ว เลือกบ้านอื่นนะ');
         return;
       }
+      play('complete');
       // short beat so the lit-up house is seen before the page changes
       setTimeout(() => navigate(`/play/${eventSlug}?house=${selectedHouse}${card ? `&card=${card}` : ''}`), 450);
     });
@@ -78,6 +81,7 @@ const JoinView: React.FC = () => {
   return (
     <ForestScene image="/village-bg.jpg" fireflies={12}>
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '36px 16px 28px', gap: '22px' }}>
+        <SoundToggle style={{ position: 'absolute', top: '14px', right: '14px' }} />
         <div className="lh-rise" style={{ textAlign: 'center' }}>
           <div style={{ fontFamily: "'Cinzel', serif", fontWeight: 700, fontSize: '13px', letterSpacing: '0.3em', color: 'var(--lh-gold)' }}>LITTLE HOOD</div>
           <h1 className="lh-display" style={{ margin: '6px 0', fontSize: '32px', color: 'var(--lh-gold-bright)', textShadow: '0 3px 0 rgba(0,0,0,0.6), 0 0 24px rgba(0,0,0,0.6)' }}>เลือกบ้านของคุณ</h1>
@@ -91,7 +95,7 @@ const JoinView: React.FC = () => {
             return (
               <button
                 key={id}
-                onClick={() => { setSelectedHouse(id); setError(''); }}
+                onClick={() => { setSelectedHouse(id); setError(''); play('lantern'); }}
                 disabled={taken}
                 aria-pressed={isSelected}
                 aria-label={taken ? `บ้านที่ ${id} มีคนเข้าแล้ว` : `บ้านที่ ${id}`}
